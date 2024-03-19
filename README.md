@@ -1,2 +1,3 @@
-# Final_Project_Comp_4303
-Repository for final project for comp 4303
+# Final Project Comp 4303
+
+Author - Harsh Sharma & Sahil Mahey
