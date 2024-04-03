@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { TileNode } from './TileNode.js'
+import { Perlin } from './Perlin.js';
 
 export class MapRenderer {
 
@@ -12,7 +13,7 @@ export class MapRenderer {
 
 		this.groundGeometries = new THREE.BoxGeometry(0,0,0);
 		this.obstacleGeometries = new THREE.BoxGeometry(0,0,0);
-
+        this.perlin = new Perlin(256);
 	
 	}
 
@@ -40,6 +41,8 @@ export class MapRenderer {
 		return gameObject;
 	}
 
+	
+
 	createTile(i, j, type) {
 
 		let x = (i * this.tileSize) + this.start.x;
@@ -48,10 +51,13 @@ export class MapRenderer {
 
 		let height = this.tileSize;
 		if (type === TileNode.Type.Obstacle) {
-			height = height * 2;
+			height = height * 3;
 		}
 
-
+		if (type === TileNode.Type.Ground) {
+            let noiseValue = this.perlin.octaveNoise(i, j, 0.1, 4, 0.5); // Adjust parameters as needed
+            height += (noiseValue * 10); // Adjust the scale factor as needed
+        }
 		let geometry = new THREE.BoxGeometry(this.tileSize,
 											 height, 
 											 this.tileSize);

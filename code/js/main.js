@@ -96,8 +96,8 @@ function setup() {
 	tomCamera.position.set(0, 2, 1); // Adjust Y for "height" and Z for "forward/backward" relative to the model
 	tomCamera.lookAt(new THREE.Vector3(0, 2, 2)); // Adjust based on the model's scale
 	jerryCamera.position.set(0, 1, 0); // Adjust based on the model's scale
-	activeCamera = tomCamera; // Start with Tom's camera
-
+	//activeCamera = tomCamera; // Start with Tom's camera
+	activeCamera = mapCamera;
 	// Position and scale adjustments as necessary
 	jerry.gameObject.scale.set(2, 2, 2); // Example scaling
 	tom.gameObject.scale.set(2, 2, 2); // Example scaling
@@ -128,7 +128,7 @@ function animate() {
 
 	// Update characters
 	let steer = jerry.followPlayer(gameMap, tom);
-	jerry.applyForce(steer);
+	//jerry.applyForce(steer);
 	jerry.update(deltaTime, gameMap);
 	tom.update(deltaTime, gameMap, controller);
 	orbitControls.update();
