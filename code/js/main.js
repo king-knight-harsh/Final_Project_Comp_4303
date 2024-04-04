@@ -6,6 +6,7 @@ import { Tom } from "./Game/Behaviour/Tom.js";
 import { Controller } from "./Game/Behaviour/Controller.js"; // Ensure this is your updated Controller
 import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { resourceFiles } from "./Util/ResourceFile.js";
 
 // Create Scene
 const scene = new THREE.Scene();
@@ -32,19 +33,14 @@ let activeCamera = mapCamera;
 let controller;
 
 // Characters
-const tom = new Tom(new THREE.Color(0xff0000));
-const jerry = new Mouse(new THREE.Color(0x000000));
-const jerryFriends = []; // Assuming initialization of Jerry's friends happens later
+let tom = new Tom(new THREE.Color(0xff0000));
+let jerry = new Mouse(new THREE.Color(0x000000));
+let jerryFriends = []; // Assuming initialization of Jerry's friends happens later
 
-// Resource loading
-let files = [
-	{ name: "tom", url: "/Models/tom.glb" },
-	{ name: "jerry", url: "/Models/jerry.glb" },
-	{ name: "jerryFriend1", url: "/Models/jerryFriendOne.glb" },
-	{ name: "jerryFriend2", url: "/Models/jerryFriendTwo.glb" },
-	{ name: "jerryFriend3", url: "/Models/jerryFriendThree.glb" },
-];
-const resources = new Resources(files);
+// Radius for capture
+let captureRadius = 1;
+
+const resources = new Resources(resourceFiles);
 
 // Update camera reference in the controller based on interactions or game events
 document.addEventListener("keydown", (event) => {
@@ -70,6 +66,7 @@ async function setup() {
 	scene.add(directionalLight);
 
 	gameMap.init(scene);
+
 	scene.add(gameMap.gameObject);
 
 	// Camera setup
@@ -170,14 +167,96 @@ function animate() {
 	if (controller) controller.setWorldDirection();
 
 	// Update characters
-	jerry.update(deltaTime, gameMap, tom); // Updated to reflect new logic in jerry.js
+	if (jerry) {
+		jerry.update(deltaTime, gameMap, tom);
+		// Check for Power-Up tile interaction
+		gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+	}
 	jerryFriends.forEach((mouse) => {
-		mouse.update(deltaTime, gameMap, tom); // Ensure your Mouse class supports this update signature
+		if (mouse) {
+			mouse.update(deltaTime, gameMap, tom);
+			// Each friend checks for Power-Up tile
+			gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+		}
 	});
 	tom.update(deltaTime, gameMap, controller);
+	// Tom checks for Power-Up tile
+	gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+
+	// Update Tom, Jerry, and Jerry's friends
+	checkForCapture();
 
 	orbitControls.update();
 	renderer.render(scene, activeCamera); // Use the active camera
+}
+
+function checkForCapture() {
+	// Check if Jerry has been captured
+	if (jerry && tom.location.distanceTo(jerry.location) < captureRadius) {
+		console.log("Tom has caught Jerry!");
+		scene.remove(jerry.gameObject); // Remove Jerry from the scene
+		jerry = null; // Setting jerry to null to indicate capture
+	}
+
+	// Filter Jerry's friends to remove any that Tom catches
+	jerryFriends = jerryFriends.filter((friend) => {
+		if (tom.location.distanceTo(friend.location) < captureRadius) {
+			console.log("Tom has caught a friend!");
+			scene.remove(friend.gameObject);
+			return false; // This friend is caught, remove from array
+		}
+		return true; // This friend remains uncaptured, keep in array
+	});
+
+	checkForReset();
+}
+
+function checkForReset() {
+	if (!jerry && jerryFriends.length === 0) {
+		resetGame();
+	}
+}
+
+function resetGame() {
+	// Create modal HTML
+	const modalHTML = `
+        <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="gameOverModalLabel">Game Over</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        All characters have been caught!
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="restartBtn">Restart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+	// Append modal HTML to document body
+	document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+	// Show the modal
+	const modal = new bootstrap.Modal(document.getElementById("gameOverModal"));
+	modal.show();
+
+	// Set the opacity of the modal backdrop inline
+	const modalBackdrop = document.querySelector(".modal-backdrop");
+	if (modalBackdrop) {
+		modalBackdrop.style.opacity = "0"; // Adjust the opacity value as needed
+	}
+
+	// Add event listener to restart button
+	const restartBtn = document.getElementById("restartBtn");
+	restartBtn.addEventListener("click", () => {
+		// Refresh the page to restart the game
+		location.reload();
+	});
 }
 
 setup();

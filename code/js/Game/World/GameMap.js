@@ -4,6 +4,7 @@ import { MapRenderer } from "./MapRenderer";
 import { Graph } from "./Graph";
 import { PriorityQueue } from "../../Util/PriorityQueue";
 import { VectorUtil } from "../../Util/VectorUtil";
+import { Tom } from "../Behaviour/Tom.js";
 
 export class GameMap {
 	// Constructor for our GameMap class
@@ -31,13 +32,43 @@ export class GameMap {
 
 		this.flowfield = new Map();
 		this.goal = null;
+		this.powerUpTiles = new Map();
 	}
 
 	init(scene) {
 		this.scene = scene;
 		this.graph.initGraph();
-		// Set the game object to our rendering
 		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes);
+		this.placeInitialPowerUps();
+	}
+
+	placeInitialPowerUps() {
+		let randomTile = this.graph.getRandomEmptyTile();
+		if (randomTile) {
+			this.addPowerUpTile(randomTile);
+		}
+	}
+
+	addPowerUpTile(node) {
+		this.powerUpTiles.set(node.id, node);
+		this.highlight(node, 0xffff00);
+	}
+
+	removePowerUpTile(node, character) {
+		this.powerUpTiles.delete(node.id);
+		this.highlight(node, 0x00ff00);
+		setTimeout(() => this.addPowerUpTile(node), 6000);
+		character.topSpeed /= 2;
+	}
+
+	checkCharacterTile(characterNode, character) {
+		if (this.powerUpTiles.has(characterNode.id)) {
+			// Assuming character is Tom and has a method to handle power-up effect
+			if (character instanceof Tom) {
+				character.topSpeed *= 2; // This method boosts speed and starts a timer to reset it
+			}
+			this.removePowerUpTile(characterNode, character); // Remove the power-up tile and start its reactivation timer
+		}
 	}
 
 	// Method to get location from a node
@@ -166,6 +197,6 @@ export class GameMap {
 
 	isTileWalkable(node) {
 		// Check if the node exists and is not an obstacle
-		return node && !node.isObstacle;
+		return node && !node.isObstacle();
 	}
 }

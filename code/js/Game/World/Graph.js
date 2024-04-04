@@ -37,6 +37,32 @@ export class Graph {
 			}
 		}
 
+		let maxAttempts = 100;
+		let attempts = 0;
+		let powerUpPlaced = false;
+
+		while (!powerUpPlaced && attempts < maxAttempts) {
+			let randomX = Math.floor(Math.random() * this.cols);
+			let randomZ = Math.floor(Math.random() * this.rows);
+			let powerUpIndex = randomZ * this.cols + randomX;
+
+			// Ensure the selected tile is initially Ground and not an Obstacle
+			if (this.nodes[powerUpIndex].type === TileNode.Type.Ground) {
+				this.nodes[powerUpIndex].type = TileNode.Type.PowerUp; // Set the random node to PowerUp
+				powerUpPlaced = true;
+			} else {
+				attempts++;
+			}
+		}
+
+		if (!powerUpPlaced) {
+			console.error(
+				"Failed to place PowerUp after " +
+					maxAttempts +
+					" attempts. Consider adjusting map layout or obstacle density."
+			);
+		}
+
 		// Create west, east, north, south
 		// edges for each node in our graph
 		for (let j = 0; j < this.rows; j++) {

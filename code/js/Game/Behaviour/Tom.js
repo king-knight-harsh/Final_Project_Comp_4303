@@ -3,8 +3,8 @@ import { State } from "./State.js";
 import * as THREE from "three"; // Assuming State.js exports these
 
 export class Tom extends Character {
-	constructor(colour) {
-		super(colour);
+	constructor(color) {
+		super(color);
 		this.frictionMagnitude = 20;
 
 		// State

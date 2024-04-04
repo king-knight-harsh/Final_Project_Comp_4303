@@ -6,6 +6,7 @@ export class Mouse extends Character {
 		super(mColor);
 		this.path = [];
 		this.currentTargetIndex = 0;
+		this.topSpeed = 10;
 	}
 
 	update(deltaTime, gameMap, player) {
@@ -20,9 +21,11 @@ export class Mouse extends Character {
 			}
 		}
 
+		// Existing path following logic remains unchanged
 		if (this.path && this.path.length > 0) {
 			this.followPath(deltaTime, gameMap);
 		} else {
+			// Prevent Jerry from moving towards an idle Tom
 			this.chooseRandomDirection(gameMap, 20, player);
 		}
 
@@ -46,10 +49,10 @@ export class Mouse extends Character {
 	}
 
 	attemptEscape(gameMap, direction, player) {
-		let safeDistance = 20;
+		let safeRadius = 6;
 		let escapeTargetPosition = new THREE.Vector3().addVectors(
 			this.location,
-			direction.multiplyScalar(safeDistance)
+			direction.multiplyScalar(safeRadius)
 		);
 		let escapeTargetTile = gameMap.quantize(escapeTargetPosition);
 
@@ -57,14 +60,17 @@ export class Mouse extends Character {
 			this.path = gameMap.astar(this.getCurrentTile(gameMap), escapeTargetTile);
 			this.currentTargetIndex = 0;
 		} else {
-			this.chooseRandomDirection(gameMap, safeDistance, player);
+			this.chooseRandomDirection(gameMap, safeRadius, player);
 		}
 	}
 
-	chooseRandomDirection(gameMap, safeDistance, player) {
-		let attempts = 0;
+	chooseRandomDirection(gameMap, safeRadius, player) {
+		let maxAttempts = 20;
 		let found = false;
-		while (attempts < 10 && !found) {
+		let furthestDistance = 0;
+		let bestTargetTile = null;
+
+		for (let i = 0; i < maxAttempts; i++) {
 			let randomDirection = new THREE.Vector3(
 				Math.random() * 2 - 1,
 				0,
@@ -72,29 +78,64 @@ export class Mouse extends Character {
 			).normalize();
 			let potentialTargetPosition = new THREE.Vector3().addVectors(
 				this.location,
-				randomDirection.multiplyScalar(safeDistance)
+				randomDirection.multiplyScalar(safeRadius)
 			);
-			let potentialTargetTile = gameMap.quantize(potentialTargetPosition);
 			let distanceFromTom = potentialTargetPosition.distanceTo(player.location);
 
-			if (
-				distanceFromTom > safeDistance &&
-				potentialTargetTile &&
-				gameMap.isTileWalkable(potentialTargetTile)
-			) {
-				this.path = gameMap.astar(
-					this.getCurrentTile(gameMap),
-					potentialTargetTile
-				);
-				this.currentTargetIndex = 0;
-				found = true;
+			if (distanceFromTom > furthestDistance) {
+				let potentialTargetTile = gameMap.quantize(potentialTargetPosition);
+				if (
+					potentialTargetTile &&
+					gameMap.isTileWalkable(potentialTargetTile)
+				) {
+					furthestDistance = distanceFromTom;
+					bestTargetTile = potentialTargetTile;
+					found = true;
+				}
 			}
-			attempts++;
 		}
-		if (!found) {
+
+		if (found && bestTargetTile) {
+			this.path = gameMap.astar(this.getCurrentTile(gameMap), bestTargetTile);
+			this.currentTargetIndex = 0;
+		} else {
 			console.warn(
-				"Jerry couldn't find a safe path away from Tom. Staying put."
+				"Jerry couldn't find a safer path away from Tom. Trying any movement."
 			);
+			// As a last resort, try moving to any adjacent walkable tile.
+			this.moveAny(gameMap, player);
+		}
+	}
+
+	moveAny(gameMap, player) {
+		let bestDistance = 0;
+		let bestTile = null;
+		let currentTile = this.getCurrentTile(gameMap);
+
+		// Scan in a wider range around Jerry for a potential move
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dz = -1; dz <= 1; dz++) {
+				if (dx === 0 && dz === 0) continue; // Skip the current tile
+
+				let checkX = currentTile.x + dx;
+				let checkZ = currentTile.z + dz;
+				let potentialTile = gameMap.graph.getNode(checkX, checkZ);
+				if (potentialTile && gameMap.isTileWalkable(potentialTile)) {
+					let potentialPosition = gameMap.localize(potentialTile);
+					let distanceFromTom = potentialPosition.distanceTo(player.location);
+					if (distanceFromTom > bestDistance) {
+						bestDistance = distanceFromTom;
+						bestTile = potentialTile;
+					}
+				}
+			}
+		}
+
+		if (bestTile) {
+			this.path = gameMap.astar(currentTile, bestTile);
+			this.currentTargetIndex = 0;
+		} else {
+			console.warn("Jerry is trapped and cannot move to any adjacent tile.");
 			this.path = [];
 		}
 	}

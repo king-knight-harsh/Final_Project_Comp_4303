@@ -2,6 +2,7 @@ export class TileNode {
 	static Type = Object.freeze({
 		Ground: Symbol("ground"),
 		Obstacle: Symbol("obstacle"),
+		PowerUp: Symbol("powerUp"),
 	});
 
 	// Node Constructor
@@ -9,9 +10,7 @@ export class TileNode {
 		this.id = id;
 		this.x = x;
 		this.z = z;
-
 		this.edges = [];
-
 		this.type = type;
 	}
 
@@ -20,6 +19,10 @@ export class TileNode {
 		if (node.type === TileNode.Type.Ground) {
 			this.edges.push({ node: node, cost: cost });
 		}
+	}
+
+	isObstacle() {
+		return this.type === TileNode.Type.Obstacle;
 	}
 
 	// Test if this node has an edge to the neighbour

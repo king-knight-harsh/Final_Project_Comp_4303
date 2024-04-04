@@ -10,6 +10,7 @@ export class MapRenderer {
 
 		this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
 		this.obstacleGeometries = new THREE.BoxGeometry(0, 0, 0);
+		this.powerUpGeometries = new THREE.BoxGeometry(0, 0, 0);
 	}
 
 	createRendering(graph) {
