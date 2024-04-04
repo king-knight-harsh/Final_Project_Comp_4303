@@ -1,50 +1,52 @@
+// Import necessary components
 import * as THREE from "three";
 import { GameMap } from "./Game/World/GameMap.js";
 import { Mouse } from "./Game/Behaviour/Jerry.js";
 import { Tom } from "./Game/Behaviour/Tom.js";
-import { Controller } from "./Game/Behaviour/Controller.js";
+import { Controller } from "./Game/Behaviour/Controller.js"; // Ensure this is your updated Controller
 import { Resources } from "./Util/Resources.js";
-
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // Create Scene
 const scene = new THREE.Scene();
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-let tomCamera, jerryCamera, activeCamera;
-
-// Adding full map camera setup
+// Camera Setup
 const mapCamera = new THREE.PerspectiveCamera(
 	75,
 	window.innerWidth / window.innerHeight,
 	0.1,
 	1000
 );
+mapCamera.position.set(0, 100, 0); // Elevated position to view the whole map
 const orbitControls = new OrbitControls(mapCamera, renderer.domElement);
-mapCamera.position.set(0, 100, 0); // Position above the center of the map
-mapCamera.lookAt(scene.position); // Look at the center of the scene
+orbitControls.update(); // Initial update
 
-// Create GameMap, clock, controller, and characters
+// Game Components
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
-const controller = new Controller(document);
+let tomCamera, jerryCamera;
+let activeCamera = mapCamera;
+let controller;
+
+// Characters
 const tom = new Tom(new THREE.Color(0xff0000));
-let jerry = new Mouse(new THREE.Color(0x000000));
+const jerry = new Mouse(new THREE.Color(0x000000));
+const jerryFriends = []; // Assuming initialization of Jerry's friends happens later
 
 // Resource loading
 let files = [
 	{ name: "tom", url: "/Models/tom.glb" },
 	{ name: "jerry", url: "/Models/jerry.glb" },
-	{ name: "jerryFriend1", url: "/Models/rat.glb" },
-	{ name: "jerryFriend2", url: "/Models/rat_1.glb" },
-	{ name: "jerryFriend3", url: "/Models/rat_2.glb" },
+	{ name: "jerryFriend1", url: "/Models/jerryFriendOne.glb" },
+	{ name: "jerryFriend2", url: "/Models/jerryFriendTwo.glb" },
+	{ name: "jerryFriend3", url: "/Models/jerryFriendThree.glb" },
 ];
 const resources = new Resources(files);
-await resources.loadAll();
 
-// Keybinding for camera switch
+// Update camera reference in the controller based on interactions or game events
 document.addEventListener("keydown", (event) => {
 	if (event.key === "c" || event.key === "C") {
 		activeCamera =
@@ -53,9 +55,11 @@ document.addEventListener("keydown", (event) => {
 				: activeCamera === jerryCamera
 				? mapCamera
 				: tomCamera;
+
+		controller.setCamera(activeCamera);
 	}
 });
-let jerryFriends = [];
+
 // Setup our scene
 async function setup() {
 	scene.background = new THREE.Color(0xffffff);
@@ -68,26 +72,37 @@ async function setup() {
 	gameMap.init(scene);
 	scene.add(gameMap.gameObject);
 
-	// Set models for characters
-	await resources.loadAll().then(() => {
-		jerry.setModel(resources.get("jerry"));
-		tom.setModel(resources.get("tom"));
-		// Initialize additional mice
-		for (let i = 0; i < 3; i++) {
-			let jerryFriend = new Mouse(new THREE.Color(0x000000)); // Assuming black color for all mice
-			jerryFriend.setModel(resources.get(`jerryFriend${i + 1}`));
-			jerryFriends.push(jerryFriend);
-		}
-	});
-
 	// Camera setup
 	setupCameras();
+
+	controller = new Controller(document, activeCamera);
+
+	// Model setup
+	await setupModels();
 
 	// Initial positions
 	initializeCharacters();
 
 	// Start animation loop
 	animate();
+}
+
+async function setupModels() {
+	await resources.loadAll().then(() => {
+		jerry.setModel(resources.get("jerry"));
+		// Scale Jerry down
+		jerry.gameObject.scale.set(0.5, 0.5, 0.5);
+
+		tom.setModel(resources.get("tom"));
+		// Initialize additional mice
+		for (let i = 1; i <= 3; i++) {
+			let jerryFriend = new Mouse(new THREE.Color(0x000000));
+			jerryFriend.setModel(resources.get(`jerryFriend${i}`));
+			// Scale Jerry's friends up
+			jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
+			jerryFriends.push(jerryFriend);
+		}
+	});
 }
 
 function setupCameras() {
@@ -98,26 +113,25 @@ function setupCameras() {
 	mapCamera.updateProjectionMatrix();
 	scene.add(mapCamera);
 
-	// Camera setup for Tom
 	tomCamera = new THREE.PerspectiveCamera(
-		75, // Field of view
-		window.innerWidth / window.innerHeight, // Aspect ratio
-		0.1, // Near clipping plane
-		100 // Far clipping plane
+		75,
+		window.innerWidth / window.innerHeight,
+		0.1,
+		100
 	);
-	// Position the Tom camera slightly above and behind Tom
+
+	// Initialize tomCamera
 	tomCamera.position.set(0, 2, -5);
 	tomCamera.lookAt(tom.gameObject.position);
 	tom.gameObject.add(tomCamera);
 
-	// Camera setup for Jerry
+	// Initialize jerryCamera
 	jerryCamera = new THREE.PerspectiveCamera(
-		75, // Field of view
-		window.innerWidth / window.innerHeight, // Aspect ratio
-		0.1, // Near clipping plane
-		100 // Far clipping plane
+		75,
+		window.innerWidth / window.innerHeight,
+		0.1,
+		100
 	);
-	// Position the Jerry camera slightly above and behind Jerry
 	jerryCamera.position.set(0, 1, -3);
 	jerryCamera.lookAt(jerry.gameObject.position);
 	jerry.gameObject.add(jerryCamera);
@@ -152,6 +166,8 @@ function animate() {
 	requestAnimationFrame(animate);
 
 	let deltaTime = clock.getDelta();
+
+	if (controller) controller.setWorldDirection();
 
 	// Update characters
 	jerry.update(deltaTime, gameMap, tom); // Updated to reflect new logic in jerry.js

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { VectorUtil } from "../../Util/VectorUtil.js";
+import { TileNode } from "../World/TileNode.js";
 
 export class Character {
 	// Character Constructor
@@ -29,6 +30,8 @@ export class Character {
 		this.topSpeed = 5;
 		this.mass = 1;
 		this.frictionMagnitude = 0;
+
+		this.lastValidLocation = new THREE.Vector3(0, 0, 0);
 	}
 
 	// Set the model for the character
@@ -54,6 +57,13 @@ export class Character {
 	// update character
 	update(deltaTime, gameMap) {
 		this.physics(gameMap);
+
+		// Additional logic to check for being stuck on an obstacle
+		let currentNode = gameMap.quantize(this.location);
+		if (currentNode && currentNode.type === TileNode.Type.Obstacle) {
+			console.log("Character is on an obstacle, respawning...");
+			this.respawnAtRandomLocation(gameMap);
+		}
 		// update velocity via acceleration
 		this.velocity.addScaledVector(this.acceleration, deltaTime);
 
@@ -86,11 +96,16 @@ export class Character {
 	checkEdges(gameMap) {
 		let node = gameMap.quantize(this.location);
 
-		// If the node is undefined, either return early or handle accordingly
+		// Assuming you keep track of the last valid node/location
 		if (!node) {
 			console.error("No node found at this location: ", this.location);
-			return; // Return early to prevent further execution
+			// Move character back to the last valid node or a default position
+			this.location.copy(this.lastValidLocation);
+			return; // Early return to avoid further processing
 		}
+
+		// Update lastValidLocation with current location after successful edge checks
+		this.lastValidLocation = this.location.clone();
 
 		let nodeLocation = gameMap.localize(node);
 
@@ -130,6 +145,7 @@ export class Character {
 				this.location.z = nodeEdge - this.size / 2;
 			}
 		}
+		this.lastValidLocation.copy(this.location);
 	}
 
 	// Apply force to our character
@@ -150,5 +166,13 @@ export class Character {
 		friction.normalize();
 		friction.multiplyScalar(this.frictionMagnitude);
 		this.applyForce(friction);
+	}
+
+	respawnAtRandomLocation(gameMap) {
+		let randomTile = gameMap.graph.getRandomEmptyTile();
+		if (randomTile) {
+			this.location = gameMap.localize(randomTile);
+			console.log("Respawned character to a new location.");
+		}
 	}
 }
