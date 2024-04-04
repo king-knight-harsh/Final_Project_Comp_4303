@@ -2,7 +2,7 @@ import { Character } from "./Character.js";
 import { State } from "./State.js";
 import * as THREE from "three"; // Assuming State.js exports these
 
-export class Player extends Character {
+export class Tom extends Character {
 	constructor(colour) {
 		super(colour);
 		this.frictionMagnitude = 20;

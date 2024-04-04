@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GameMap } from "./Game/World/GameMap.js";
-import { NPC } from "./Game/Behaviour/Jerry.js";
-import { Player } from "./Game/Behaviour/Tom.js";
+import { Mouse } from "./Game/Behaviour/Jerry.js";
+import { Tom } from "./Game/Behaviour/Tom.js";
 import { Controller } from "./Game/Behaviour/Controller.js";
 import { Resources } from "./Util/Resources.js";
 
@@ -30,13 +30,16 @@ mapCamera.lookAt(scene.position); // Look at the center of the scene
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
 const controller = new Controller(document);
-const tom = new Player(new THREE.Color(0xff0000));
-let jerry = new NPC(new THREE.Color(0x000000));
+const tom = new Tom(new THREE.Color(0xff0000));
+let jerry = new Mouse(new THREE.Color(0x000000));
 
 // Resource loading
 let files = [
-	{ name: "cat", url: "/Models/cat.glb" },
-	{ name: "mouse1", url: "/Models/mouse1.glb" },
+	{ name: "tom", url: "/Models/tom.glb" },
+	{ name: "jerry", url: "/Models/jerry.glb" },
+	{ name: "jerryFriend1", url: "/Models/rat.glb" },
+	{ name: "jerryFriend2", url: "/Models/rat_1.glb" },
+	{ name: "jerryFriend3", url: "/Models/rat_2.glb" },
 ];
 const resources = new Resources(files);
 await resources.loadAll();
@@ -52,7 +55,7 @@ document.addEventListener("keydown", (event) => {
 				: tomCamera;
 	}
 });
-
+let jerryFriends = [];
 // Setup our scene
 async function setup() {
 	scene.background = new THREE.Color(0xffffff);
@@ -67,8 +70,14 @@ async function setup() {
 
 	// Set models for characters
 	await resources.loadAll().then(() => {
-		jerry.setModel(resources.get("mouse1"));
-		tom.setModel(resources.get("cat"));
+		jerry.setModel(resources.get("jerry"));
+		tom.setModel(resources.get("tom"));
+		// Initialize additional mice
+		for (let i = 0; i < 3; i++) {
+			let jerryFriend = new Mouse(new THREE.Color(0x000000)); // Assuming black color for all mice
+			jerryFriend.setModel(resources.get(`jerryFriend${i + 1}`));
+			jerryFriends.push(jerryFriend);
+		}
 	});
 
 	// Camera setup
@@ -129,6 +138,12 @@ function initializeCharacters() {
 	scene.add(jerry.gameObject);
 	scene.add(tom.gameObject);
 
+	jerryFriends.forEach((mouse, index) => {
+		let startMouse = gameMap.graph.getRandomEmptyTile();
+		mouse.location = gameMap.localize(startMouse);
+		scene.add(mouse.gameObject);
+	});
+
 	// Active camera starts with the map view
 	activeCamera = mapCamera;
 }
@@ -140,6 +155,9 @@ function animate() {
 
 	// Update characters
 	jerry.update(deltaTime, gameMap, tom); // Updated to reflect new logic in jerry.js
+	jerryFriends.forEach((mouse) => {
+		mouse.update(deltaTime, gameMap, tom); // Ensure your Mouse class supports this update signature
+	});
 	tom.update(deltaTime, gameMap, controller);
 
 	orbitControls.update();

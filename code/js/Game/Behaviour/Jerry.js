@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Character } from "./Character.js";
 
-export class NPC extends Character {
+export class Mouse extends Character {
 	constructor(mColor) {
 		super(mColor);
 		this.path = [];
