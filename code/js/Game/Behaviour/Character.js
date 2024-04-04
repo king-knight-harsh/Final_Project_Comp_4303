@@ -85,7 +85,20 @@ export class Character {
 	// check edges
 	checkEdges(gameMap) {
 		let node = gameMap.quantize(this.location);
+
+		// If the node is undefined, either return early or handle accordingly
+		if (!node) {
+			console.error("No node found at this location: ", this.location);
+			return; // Return early to prevent further execution
+		}
+
 		let nodeLocation = gameMap.localize(node);
+
+		// Add a guard clause to ensure node has the hasEdgeTo method
+		if (typeof node.hasEdgeTo !== "function") {
+			console.error("Node does not have a hasEdgeTo function: ", node);
+			return;
+		}
 
 		if (!node.hasEdgeTo(node.x - 1, node.z)) {
 			let nodeEdge = nodeLocation.x - gameMap.tileSize / 2;

@@ -42,6 +42,10 @@ export class GameMap {
 
 	// Method to get location from a node
 	localize(node) {
+		if (!node || node.x === undefined || node.z === undefined) {
+			console.error("Invalid node:", node);
+			return new THREE.Vector3(0, 0, 0);
+		}
 		let x = this.start.x + node.x * this.tileSize + this.tileSize * 0.5;
 		let y = this.tileSize;
 		let z = this.start.z + node.z * this.tileSize + this.tileSize * 0.5;
@@ -118,51 +122,50 @@ export class GameMap {
 
 		open.enqueue(start, 0);
 
-		// For the cheapest node "parent" and
-		// the cost of traversing that path
 		let parent = [];
 		let g = [];
 
-		// Start by populating our table
 		for (let node of this.graph.nodes) {
-			if (node == start) {
-				g[node.id] = 0;
-			} else {
-				g[node.id] = Number.MAX_VALUE;
-			}
+			g[node.id] = node === start ? 0 : Number.MAX_VALUE;
 			parent[node.id] = null;
 		}
 
-		// Start our loop
 		while (!open.isEmpty()) {
 			let current = open.dequeue();
+
+			// Validate current before accessing its properties
+			if (!current || !current.edges) {
+				console.error("Invalid node or edges undefined", current);
+				continue; // Skip this iteration if current is not valid
+			}
+
 			closed.push(current);
 
-			if (current == end) {
+			if (current === end) {
 				return this.backtrack(start, end, parent);
 			}
 
-			for (let i in current.edges) {
-				let neighbour = current.edges[i];
-				let pathCost = neighbour.cost + g[current.id];
+			for (let edge of current.edges) {
+				let neighbour = edge.node;
+				let pathCost = edge.cost + g[current.id];
 
-				if (pathCost < g[neighbour.node.id]) {
-					parent[neighbour.node.id] = current;
-					g[neighbour.node.id] = pathCost;
+				if (pathCost < g[neighbour.id]) {
+					parent[neighbour.id] = current;
+					g[neighbour.id] = pathCost;
 
-					if (!closed.includes(neighbour.node)) {
-						if (open.includes(neighbour.node)) {
-							open.remove(neighbour.node);
-						}
-
-						let f =
-							g[neighbour.node.id] +
-							this.manhattanDistance(neighbour.node, end);
-						open.enqueue(neighbour.node, f);
+					if (!closed.includes(neighbour) && !open.includes(neighbour)) {
+						let f = g[neighbour.id] + this.manhattanDistance(neighbour, end);
+						open.enqueue(neighbour, f);
 					}
 				}
 			}
 		}
-		return null;
+
+		return null; // If the loop completes without returning, no path exists
+	}
+
+	isTileWalkable(node) {
+		// Check if the node exists and is not an obstacle
+		return node && !node.isObstacle;
 	}
 }
