@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { TileNode } from './TileNode.js'
 import { Perlin } from './Perlin.js';
-
+import { MathUtil } from '../../Util/MathUtil.js'
 export class MapRenderer {
 
 	constructor(start, tileSize, cols) {
@@ -41,7 +41,20 @@ export class MapRenderer {
 		return gameObject;
 	}
 
+	halton(base, index, start, end) {
+
+		let result = 0;
+		let denominator = 1;
 	
+		while (index > 0) {
+			denominator = denominator * base;
+			result = result + (index % base) / denominator;
+			index = Math.floor(index/base);
+		}
+		let output = ((result) * (end - start)) + start;
+		return output;
+	
+	}
 
 	createTile(i, j, type) {
 
@@ -51,12 +64,17 @@ export class MapRenderer {
 
 		let height = this.tileSize;
 		if (type === TileNode.Type.Obstacle) {
-			height = height * 3;
+			height = height*2
+			x = this.start.x + (i * this.tileSize)
+            z = this.start.z + (j * this.tileSize)
 		}
 
 		if (type === TileNode.Type.Ground) {
             let noiseValue = this.perlin.octaveNoise(i, j, 0.1, 4, 0.5); // Adjust parameters as needed
-            height += (noiseValue * 10); // Adjust the scale factor as needed
+            // height += (noiseValue*2); // Adjust the scale factor as needed
+			height = MathUtil.map(noiseValue, 0, 1, 0, 10);
+			z = (j * this.tileSize) + this.start.z;
+			x = (i * this.tileSize) + this.start.x;
         }
 		let geometry = new THREE.BoxGeometry(this.tileSize,
 											 height, 
