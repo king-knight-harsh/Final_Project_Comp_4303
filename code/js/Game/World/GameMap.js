@@ -57,16 +57,19 @@ export class GameMap {
 	removePowerUpTile(node, character) {
 		this.powerUpTiles.delete(node.id);
 		this.highlight(node, 0x00ff00);
-		setTimeout(() => this.addPowerUpTile(node), 6000);
-		character.topSpeed /= 2;
+		setTimeout(() => {
+			this.addPowerUpTile(node);
+			character.topSpeed = 5;
+		}, 6000);
 	}
 
 	checkCharacterTile(characterNode, character) {
 		if (this.powerUpTiles.has(characterNode.id)) {
 			// Assuming character is Tom and has a method to handle power-up effect
 			if (character instanceof Tom) {
-				character.topSpeed *= 2; // This method boosts speed and starts a timer to reset it
+				character.topSpeed *= 3; // This method boosts speed and starts a timer to reset it
 			}
+			
 			this.removePowerUpTile(characterNode, character); // Remove the power-up tile and start its reactivation timer
 		}
 	}
