@@ -52,6 +52,9 @@ export class TileNode {
 		return this.type === TileNode.Type.Ground;
 	}
 
+	addEdge(node, cost) {
+		this.edges.push({ node, cost });
+	}
 	// Log method
 	log() {
 		let s = this.id + ": \n";

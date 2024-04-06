@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { Character } from "./Character.js";
 
 export class Mouse extends Character {
-	constructor(mColor) {
-		super(mColor);
+	constructor(mColor, gameMap) {
+		super(mColor, gameMap);
 		this.path = [];
 		this.currentTargetIndex = 0;
 		this.topSpeed = 10;

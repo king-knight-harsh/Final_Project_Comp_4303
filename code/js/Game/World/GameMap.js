@@ -4,242 +4,217 @@ import { MapRenderer } from "./MapRenderer";
 import { Graph } from "./Graph";
 import { PriorityQueue } from "../../Util/PriorityQueue";
 import { VectorUtil } from "../../Util/VectorUtil";
-import { Tom } from "../Behaviour/Tom.js";
-import { Mouse } from "../Behaviour/Jerry.js";
+import { Tom } from "../Behaviour/Cat.js";
+import { Mouse } from "../Behaviour/Mouse.js";
 
 export class GameMap {
-  // Constructor for our GameMap class
-  constructor() {
-    this.start = new THREE.Vector3(-25, 0, -25);
+	// Constructor for our GameMap class
+	constructor() {
+		this.start = new THREE.Vector3(-25, 0, -25);
 
-    this.width = 50;
-    this.depth = 50;
-    this.powerUpTilesLocation = null;
-    // We also need to define a tile size
-    // for our tile based map
-    this.tileSize = 5;
+		this.width = 50;
+		this.depth = 50;
+		this.powerUpTilesLocation = null;
+		// We also need to define a tile size
+		// for our tile based map
+		this.tileSize = 5;
 
-    // Get our columns and rows based on
-    // width, depth and tile size
-    this.cols = this.width / this.tileSize;
-    this.rows = this.depth / this.tileSize;
+		// Get our columns and rows based on
+		// width, depth and tile size
+		this.cols = this.width / this.tileSize;
+		this.rows = this.depth / this.tileSize;
 
-    // Create our graph
-    // Which is an array of nodes
-    this.graph = new Graph(this.tileSize, this.cols, this.rows);
+		// Create our graph
+		// Which is an array of nodes
+		this.graph = new Graph(this.tileSize, this.cols, this.rows);
 
-    // Create our map renderer
-    this.mapRenderer = new MapRenderer(this.start, this.tileSize, this.cols);
+		// Create our map renderer
+		this.mapRenderer = new MapRenderer(this.start, this.tileSize, this.cols);
 
-    this.flowfield = new Map();
-    this.goal = null;
-    this.powerUpTiles = new Map();
-  }
-
-  init(scene) {
-    this.scene = scene;
-    this.graph.initGraph();
-    this.gameObject = this.mapRenderer.createRendering(this.graph.nodes);
-    this.placeInitialPowerUps();
-  }
-  halton(base, index, start, end) {
-
-    let result = 0;
-    let denominator = 1;
-  
-    while (index > 0) {
-      denominator = denominator * base;
-      result = result + (index % base) / denominator;
-      index = Math.floor(index/base);
-    }
-    let output = ((result) * (end - start)) + start;
-    return output;
-  
-  }
-  placeInitialPowerUps() {
-    let randomTile = this.graph.getRandomEmptyTile();
-    
-    if (randomTile) {
-      this.addPowerUpTile(randomTile);
-      this.powerUpTilesLocation = randomTile;
-    }
-  }
-  getPowerUpTileLoction() {
-    return this.powerUpTilesLocation;
-  }
-  addPowerUpTile(node) {
-    this.powerUpTiles.set(node.id, node);
-    this.highlight(node, 0xffff00);
-  }
-
-  removePowerUpTile(node, character) {
-    this.powerUpTiles.delete(node.id);
-    this.highlight(node, 0x00ff00);
-    if (character instanceof Tom)
-    {
-      setTimeout(() => {
-        this.addPowerUpTile(node);
-        character.topSpeed = 5;
-        
-      }, 6000);
-    }
-    if (character instanceof Mouse)
-    {
-      setTimeout(() => {
-        this.addPowerUpTile(node);
-        character.appear()
-        
-      }, 6000);
-
-    }
-  }
-
-  checkCharacterTile(characterNode, character) {
-    if (this.powerUpTiles.has(characterNode.id)) {
-     
-	  
-      // Assuming character is Tom and has a method to handle power-up effect
-      if (character instanceof Tom) {
-        character.topSpeed *= 3; // This method boosts speed and starts a timer to reset it
-      }
-      if (character instanceof Mouse) {
-        character.disappear();
-         // This method boosts speed and starts a timer to reset it
+		this.flowfield = new Map();
+		this.goal = null;
+		this.powerUpTiles = new Map();
 	}
 
-      this.removePowerUpTile(characterNode, character); // Remove the power-up tile and start its reactivation timer
-    }
-  }
+	init(scene, numberOfObstacles = 10) {
+		this.scene = scene;
+		this.graph.initGraph(numberOfObstacles);
+		this.powerUpTilesLocation = this.graph.powerUpLocation;
+		this.highlight(this.powerUpTilesLocation, 0xffff00);
+		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes, scene);
+	}
 
-  // Method to get location from a node
-  localize(node) {
-    if (!node || node.x === undefined || node.z === undefined) {
-      console.error("Invalid node:", node);
-      return new THREE.Vector3(0, 0, 0);
-    }
-    let x = this.start.x + node.x * this.tileSize + this.tileSize * 0.5;
-    let y = this.tileSize;
-    let z = this.start.z + node.z * this.tileSize + this.tileSize * 0.5;
+	halton(base, index, start, end) {
+		let result = 0;
+		let denominator = 1;
 
-    return new THREE.Vector3(x, y, z);
-  }
+		while (index > 0) {
+			denominator = denominator * base;
+			result = result + (index % base) / denominator;
+			index = Math.floor(index / base);
+		}
+		let output = result * (end - start) + start;
+		return output;
+	}
 
-  // Method to get node from a location
-  quantize(location) {
-    let x = Math.floor((location.x - this.start.x) / this.tileSize);
-    let z = Math.floor((location.z - this.start.z) / this.tileSize);
+	getPowerUpTileLocation() {
+		return this.powerUpTilesLocation;
+	}
 
-    return this.graph.getNode(x, z);
-  }
+	// Method to get location from a node
+	localize(node) {
+		if (!node || node.x === undefined || node.z === undefined) {
+			console.error("Invalid node:", node);
+			return new THREE.Vector3(0, 0, 0);
+		}
+		let x = this.start.x + node.x * this.tileSize + this.tileSize * 0.5;
+		let y = this.tileSize;
+		let z = this.start.z + node.z * this.tileSize + this.tileSize * 0.5;
 
-  // Debug method
-  highlight(node, color) {
-    let geometry = new THREE.BoxGeometry(5, 1, 5);
-    let material = new THREE.MeshBasicMaterial({ color: color });
-    let vec = this.localize(node);
+		return new THREE.Vector3(x, y, z);
+	}
 
-    geometry.translate(vec.x, vec.y + 0.5, vec.z);
-    this.scene.add(new THREE.Mesh(geometry, material));
-  }
+	// Method to get node from a location
+	quantize(location) {
+		let x = Math.floor((location.x - this.start.x) / this.tileSize);
+		let z = Math.floor((location.z - this.start.z) / this.tileSize);
+		let node = this.graph.getNode(x, z);
+		return node;
+	}
 
-  // Debug method
-  arrow(node, vector) {
-    //normalize the direction vector (convert to vector of length 1)
-    vector.normalize();
+	// Debug method
+	highlight(node, color) {
+		let geometry = new THREE.BoxGeometry(5, 1, 5);
+		let material = new THREE.MeshBasicMaterial({ color: color });
+		let vec = this.localize(node);
 
-    let origin = this.localize(node);
-    origin.y += 1.5;
-    let length = this.tileSize;
-    let hex = 0x000000;
+		geometry.translate(vec.x, vec.y + 0.5, vec.z);
+		this.scene.add(new THREE.Mesh(geometry, material));
+	}
 
-    let arrowHelper = new THREE.ArrowHelper(vector, origin, length, hex);
-    this.scene.add(arrowHelper);
-  }
+	// Debug method
+	arrow(node, vector) {
+		//normalize the direction vector (convert to vector of length 1)
+		vector.normalize();
 
-  // Debug method
-  showHeatMap(heatmap, goal) {
-    for (let [n, i] of heatmap) {
-      if (n != goal) {
-        // this only works because i is kind of in the hue range (0,360)
-        this.highlight(n, new THREE.Color("hsl(" + i + ", 100%, 50%)"));
-      }
-    }
-    this.highlight(goal, new THREE.Color(0xffffff));
-  }
+		let origin = this.localize(node);
+		origin.y += 1.5;
+		let length = this.tileSize;
+		let hex = 0x000000;
 
-  backtrack(start, end, parents) {
-    let node = end;
-    let path = [];
-    path.push(node);
-    while (node != start) {
-      path.push(parents[node.id]);
-      node = parents[node.id];
-    }
-    return path.reverse();
-  }
+		let arrowHelper = new THREE.ArrowHelper(vector, origin, length, hex);
+		this.scene.add(arrowHelper);
+	}
 
-  manhattanDistance(node, end) {
-    let nodePos = this.localize(node);
-    let endPos = this.localize(end);
+	// Debug method
+	showHeatMap(heatmap, goal) {
+		for (let [n, i] of heatmap) {
+			if (n != goal) {
+				// this only works because i is kind of in the hue range (0,360)
+				this.highlight(n, new THREE.Color("hsl(" + i + ", 100%, 50%)"));
+			}
+		}
+		this.highlight(goal, new THREE.Color(0xffffff));
+	}
 
-    let dx = Math.abs(nodePos.x - endPos.x);
-    let dz = Math.abs(nodePos.z - endPos.z);
-    return dx + dz;
-  }
+	backtrack(start, end, parents) {
+		let node = end;
+		let path = [];
+		path.push(node);
+		while (node != start) {
+			path.push(parents[node.id]);
+			node = parents[node.id];
+		}
+		return path.reverse();
+	}
 
-  astar(start, end) {
-    let open = new PriorityQueue();
-    let closed = [];
+	manhattanDistance(node, end) {
+		let nodePos = this.localize(node);
+		let endPos = this.localize(end);
 
-    open.enqueue(start, 0);
+		let dx = Math.abs(nodePos.x - endPos.x);
+		let dz = Math.abs(nodePos.z - endPos.z);
+		return dx + dz;
+	}
 
-    let parent = [];
-    let g = [];
+	astar(start, end) {
+		let open = new PriorityQueue();
+		let closed = [];
 
-    for (let node of this.graph.nodes) {
-      g[node.id] = node === start ? 0 : Number.MAX_VALUE;
-      parent[node.id] = null;
-    }
+		open.enqueue(start, 0);
 
-    while (!open.isEmpty()) {
-      let current = open.dequeue();
+		let parent = [];
+		let g = [];
 
-      // Validate current before accessing its properties
-      if (!current || !current.edges) {
-        console.error("Invalid node or edges undefined", current);
-        continue; // Skip this iteration if current is not valid
-      }
+		for (let node of this.graph.nodes) {
+			g[node.id] = node === start ? 0 : Number.MAX_VALUE;
+			parent[node.id] = null;
+		}
 
-      closed.push(current);
+		while (!open.isEmpty()) {
+			let current = open.dequeue();
 
-      if (current === end) {
-        return this.backtrack(start, end, parent);
-      }
+			// Validate current before accessing its properties
+			if (!current || !current.edges) {
+				console.error("Invalid node or edges undefined", current);
+				continue; // Skip this iteration if current is not valid
+			}
 
-      for (let edge of current.edges) {
-        let neighbour = edge.node;
-        let pathCost = edge.cost + g[current.id];
+			closed.push(current);
 
-        if (pathCost < g[neighbour.id]) {
-          parent[neighbour.id] = current;
-          g[neighbour.id] = pathCost;
+			if (current === end) {
+				return this.backtrack(start, end, parent);
+			}
 
-          if (!closed.includes(neighbour) && !open.includes(neighbour)) {
-            let f = g[neighbour.id] + this.manhattanDistance(neighbour, end);
-            open.enqueue(neighbour, f);
-          }
-        }
-      }
-    }
+			for (let edge of current.edges) {
+				let neighbour = edge.node;
+				let pathCost = edge.cost + g[current.id];
 
-    return null; // If the loop completes without returning, no path exists
-  }
+				if (pathCost < g[neighbour.id]) {
+					parent[neighbour.id] = current;
+					g[neighbour.id] = pathCost;
 
-  isTileWalkable(node) {
-    // Check if the node exists and is not an obstacle
+					if (!closed.includes(neighbour) && !open.includes(neighbour)) {
+						let f = g[neighbour.id] + this.manhattanDistance(neighbour, end);
+						open.enqueue(neighbour, f);
+					}
+				}
+			}
+		}
+		return null; // If the loop completes without returning, no path exists
+	}
 
-    return node && !node.isObstacle()
-  }
+	/**
+	 * The method to get a node from the graph
+	 * @param {*} x - The x coordinate
+	 * @param {*} z - The z coordinate
+	 * @returns {TileNode} - The node from the graph
+	 */
+	getNode(x, z) {
+		const node = this.graph.getNode(x, z);
+		return node;
+	}
 
-  
+	/**
+	 * The method to find the current tile
+	 * @param {THREE.Vector3} location - The location vector of the bot
+	 */
+	getCurrentTile(location) {
+		const x = Math.floor((location.x - this.start.x) / this.tileSize);
+		const z = Math.floor((location.z - this.start.z) / this.tileSize);
+		return this.getNode(x, z);
+	}
+
+	isTileWalkable(node) {
+		// Check if the node exists and is not an obstacle
+		return node && !node.isObstacle();
+	}
+
+	activatePowerUPTile() {
+		this.highlight(this.powerUpTilesLocation, 0x00ff00);
+	}
+
+	resetPowerUPTile() {
+		this.highlight(this.powerUpTilesLocation, 0xffff00);
+	}
 }

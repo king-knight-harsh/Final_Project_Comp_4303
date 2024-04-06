@@ -1,8 +1,6 @@
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { TileNode } from "./TileNode.js";
-import { Perlin } from './Perlin.js';
-import { MathUtil } from '../../Util/MathUtil.js'
 
 export class MapRenderer {
 	constructor(start, tileSize, cols) {
@@ -11,74 +9,97 @@ export class MapRenderer {
 		this.cols = cols;
 
 		this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
-		this.obstacleGeometries = new THREE.BoxGeometry(0, 0, 0);
-		this.powerUpGeometries = new THREE.BoxGeometry(0, 0, 0);
-		this.perlin = new Perlin(256);
-    
+		// Use a map to manage non-terrain tiles
+		this.nonTerrainTiles = new Map();
 	}
 
-	createRendering(graph) {
-		// Iterate over all of the
-		// indices in our graph
-		for (let index in graph) {
-			
-			let i = index % this.cols;
-			let j = Math.floor(index / this.cols);
-			this.createTile(i, j, graph[index].type);
+	createRendering(graph, scene) {
+		for (let node of graph) {
+			this.createGround(node);
+			this.setTile(node, scene);
 		}
+		let groundMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
 
-		let groundMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-		let obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-
-		let gameObject = new THREE.Group();
 		let ground = new THREE.Mesh(this.groundGeometries, groundMaterial);
-		let obstacles = new THREE.Mesh(this.obstacleGeometries, obstacleMaterial);
-
-		gameObject.add(ground);
-		gameObject.add(obstacles);
-
-		return gameObject;
+		scene.add(ground);
 	}
 
-	createTile(i, j, type) {
-
-		let x = (i * this.tileSize) + this.start.x;
+	createGround(node) {
+		let x = node.x * this.tileSize + this.start.x;
 		let y = 0;
-		let z = (j * this.tileSize) + this.start.z;
+		let z = node.z * this.tileSize + this.start.z;
 
-		let height = this.tileSize;
-		if (type === TileNode.Type.Obstacle) {
-			height = height*2
-			x = this.start.x + (i * this.tileSize)
-            z = this.start.z + (j * this.tileSize)
-		}
+		let geometry = new THREE.BoxGeometry(
+			this.tileSize,
+			this.tileSize,
+			this.tileSize
+		);
+		geometry.translate(
+			x + 0.5 * this.tileSize,
+			y + 0.5 * this.tileSize,
+			z + 0.5 * this.tileSize
+		);
 
-		if (type === TileNode.Type.Ground) {
-            let noiseValue = this.perlin.octaveNoise(i, j, 0.1, 4, 0.5); // Adjust parameters as needed
-            // height += (noiseValue*2); // Adjust the scale factor as needed
-			height = MathUtil.map(noiseValue, 0, 1, 0, 10);
-			z = (j * this.tileSize) + this.start.z;
-			x = (i * this.tileSize) + this.start.x;
-        }
-		let geometry = new THREE.BoxGeometry(this.tileSize,
-											 height, 
-											 this.tileSize);
-		geometry.translate(x + 0.5 * this.tileSize,
-						   y + 0.5 * height,
-						   z + 0.5 * this.tileSize);
-
-		if (type === TileNode.Type.Obstacle) {
-			this.obstacleGeometries = BufferGeometryUtils.mergeGeometries(
-										[this.obstacleGeometries,
-										geometry]
-									);
-		} else {
-			this.groundGeometries = BufferGeometryUtils.mergeGeometries(
-										[this.groundGeometries,
-										geometry]
-									);
-		}
-
+		this.groundGeometries = BufferGeometryUtils.mergeGeometries([
+			this.groundGeometries,
+			geometry,
+		]);
 	}
-	
+
+	setTile(node, scene) {
+		if (this.nonTerrainTiles.has(node)) {
+			scene.remove(this.nonTerrainTiles.get(node));
+		}
+		// Only create non-ground tiles
+		if (node.type != TileNode.Type.Ground) {
+			let material;
+			switch (node.type) {
+				case TileNode.Type.PowerUp:
+					material = new THREE.MeshStandardMaterial({
+						color: 0xffff00,
+					});
+					break;
+				case TileNode.Type.Obstacle:
+					material = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+					break;
+				default:
+					return;
+			}
+
+			if (node.type != TileNode.Type.Ground) {
+				let x = node.x * this.tileSize + this.start.x;
+				let y =
+					node.type == TileNode.Type.Obstacle
+						? this.tileSize
+						: this.tileSize / 2;
+				let z = node.z * this.tileSize + this.start.z;
+
+				let geometry = new THREE.BoxGeometry(
+					this.tileSize,
+					this.tileSize,
+					this.tileSize
+				);
+				geometry.translate(x + 0.5 * this.tileSize, y, z + 0.5 * this.tileSize);
+
+				let mesh = new THREE.Mesh(geometry, material);
+				this.nonTerrainTiles.set(node, mesh);
+				scene.add(mesh);
+			}
+
+			let x = node.x * this.tileSize + this.start.x;
+			let y = this.tileSize / 2;
+			let z = node.z * this.tileSize + this.start.z;
+
+			let geometry = new THREE.BoxGeometry(
+				this.tileSize,
+				this.tileSize,
+				this.tileSize
+			);
+			geometry.translate(x + 0.5 * this.tileSize, y, z + 0.5 * this.tileSize);
+
+			let mesh = new THREE.Mesh(geometry, material);
+			this.nonTerrainTiles.set(node, mesh);
+			scene.add(mesh);
+		}
+	}
 }

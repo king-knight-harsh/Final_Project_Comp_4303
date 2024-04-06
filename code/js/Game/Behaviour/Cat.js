@@ -3,8 +3,8 @@ import { State } from "./State.js";
 import * as THREE from "three"; // Assuming State.js exports these
 
 export class Tom extends Character {
-	constructor(color) {
-		super(color);
+	constructor(color, gameMap) {
+		super(color, gameMap);
 		this.frictionMagnitude = 20;
 
 		// State
@@ -40,7 +40,6 @@ export class Tom extends Character {
 	getCurrentTile(gameMap) {
 		return gameMap.quantize(this.location);
 	}
-	
 
 	movedSignificantly() {
 		return this.hasMovedSignificantly;
