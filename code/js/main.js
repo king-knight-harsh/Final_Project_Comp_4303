@@ -7,6 +7,7 @@ import { Controller } from "./Game/Behaviour/Controller.js"; // Ensure this is y
 import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
+import {Dog} from "./Game/Behaviour/Dog.js"
 
 // Create Scene
 const scene = new THREE.Scene();
@@ -35,6 +36,7 @@ let controller;
 // Characters
 let tom = new Tom(new THREE.Color(0xff0000));
 let jerry = new Mouse(new THREE.Color(0x000000));
+let dog = new Dog(new THREE.Color(0xff0023))
 let jerryFriends = []; // Assuming initialization of Jerry's friends happens later
 
 // Radius for capture
@@ -86,11 +88,13 @@ async function setup() {
 
 async function setupModels() {
 	await resources.loadAll().then(() => {
+		dog.setModel(resources.get("spike"))
 		jerry.setModel(resources.get("jerry"));
 		// Scale Jerry down
 		jerry.gameObject.scale.set(0.5, 0.5, 0.5);
-
+		dog.gameObject.scale.set(1,1,1)
 		tom.setModel(resources.get("tom"));
+		
 		// Initialize additional mice
 		for (let i = 1; i <= 3; i++) {
 			let jerryFriend = new Mouse(new THREE.Color(0x000000));
@@ -137,17 +141,21 @@ function setupCameras() {
 	activeCamera = mapCamera; // Start with the map overview camera
 }
 
+
 function initializeCharacters() {
 	// Get a random starting place for Jerry and Tom
 	let startNPC = gameMap.graph.getRandomEmptyTile();
 	let startPlayer = gameMap.graph.getRandomEmptyTile();
-
+	let dogPlayer = gameMap.graph.getRandomEmptyTile();
 	// Set initial locations
 	jerry.location = gameMap.localize(startNPC);
 	tom.location = gameMap.localize(startPlayer);
-
+	dog.location = gameMap.localize(dogPlayer);
+	const dogOffset = 0.5; // Adjust this value as needed
+    dog.gameObject.position.copy(dog.location).add(new THREE.Vector3(0, dogOffset, 0));
 	scene.add(jerry.gameObject);
 	scene.add(tom.gameObject);
+	scene.add(dog.gameObject);
 
 	jerryFriends.forEach((mouse, index) => {
 		let startMouse = gameMap.graph.getRandomEmptyTile();
@@ -161,41 +169,79 @@ function initializeCharacters() {
 
 function animate() {
 	requestAnimationFrame(animate);
-
+	
 	let deltaTime = clock.getDelta();
 
 	if (controller) controller.setWorldDirection();
-
+	
+	let steer = dog.wander();
+	let dogTile = gameMap.quantize(dog.location);
+	let tomTile;
+	if (tom)
+	{
+		tomTile = gameMap.quantize(tom.location);
+	}
+	else
+	{
+		return;
+	}
+	
+    
+    let path = gameMap.astar(dogTile, tomTile);
+	
 	// Update characters
 	if (jerry) {
+		
+		let steer_for_jerry = jerry.evade(tom, deltaTime);
+	    jerry.applyForce(steer_for_jerry);
 		jerry.update(deltaTime, gameMap, tom);
 		// Check for Power-Up tile interaction
-		gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+		gameMap.checkCharacterTile(gameMap.quantize(jerry.location), jerry);
 	}
+	
 	jerryFriends.forEach((mouse) => {
 		if (mouse) {
+			let steer_for_mouses = mouse.evade(tom, deltaTime);
+	        mouse.applyForce(steer_for_mouses);
 			mouse.update(deltaTime, gameMap, tom);
 			// Each friend checks for Power-Up tile
-			gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+			gameMap.checkCharacterTile(gameMap.quantize(mouse.location), mouse);
 		}
 	});
 	tom.update(deltaTime, gameMap, controller);
 	// Tom checks for Power-Up tile
 	gameMap.checkCharacterTile(gameMap.quantize(tom.location), tom);
+	if (path && path.length > 1) {
+        // Get the next tile in the path
+        let nextTile = path[1];
 
+        // Calculate the position of the center of the next tile
+        let nextPosition = gameMap.localize(nextTile);
+
+        // Steer the dog towards the next position
+        steer = dog.seek(nextPosition);
+    }
+
+	dog.applyForce(steer);
+
+	// Update our character
+	dog.update(deltaTime,gameMap);
 	// Update Tom, Jerry, and Jerry's friends
 	checkForCapture();
 
 	orbitControls.update();
+
 	renderer.render(scene, activeCamera); // Use the active camera
 }
 
 function checkForCapture() {
 	// Check if Jerry has been captured
+	
 	if (jerry && tom.location.distanceTo(jerry.location) < captureRadius) {
 		console.log("Tom has caught Jerry!");
-		scene.remove(jerry.gameObject); // Remove Jerry from the scene
-		jerry = null; // Setting jerry to null to indicate capture
+		scene.remove(jerry.gameObject);
+		jerry = null;// Remove Jerry from the scene
+		 // Setting jerry to null to indicate capture
 	}
 
 	// Filter Jerry's friends to remove any that Tom catches
@@ -208,13 +254,22 @@ function checkForCapture() {
 		return true; // This friend remains uncaptured, keep in array
 	});
 
+	if (tom && dog.location.distanceTo(tom.location)<captureRadius)
+	{
+		console.log("spike has captured tom")
+		scene.remove(tom.gameObject)
+		tom = null;
+	}
+
 	checkForReset();
 }
 
 function checkForReset() {
-	if (!jerry && jerryFriends.length === 0) {
+	if ((!jerry && jerryFriends.length === 0) || !tom) {
 		resetGame();
+		return;
 	}
+
 }
 
 function resetGame() {

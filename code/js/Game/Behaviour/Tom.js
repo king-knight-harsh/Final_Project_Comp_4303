@@ -40,6 +40,7 @@ export class Tom extends Character {
 	getCurrentTile(gameMap) {
 		return gameMap.quantize(this.location);
 	}
+	
 
 	movedSignificantly() {
 		return this.hasMovedSignificantly;
