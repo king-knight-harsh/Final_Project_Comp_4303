@@ -46,6 +46,38 @@ export class GoToPowerUP extends State {
 	}
 }
 
+export class AvoidTom extends State {
+	enterState(character) {
+		// Determine if the character needs a new path to avoid Tom
+		if (character.needsNewPath(character.tom)) {
+			// Check if the character is moving towards Tom and attempt to escape
+			if (character.isMovingTowards(character.tom)) {
+				let escapeDirection = character.calculateEscapeDirection(character.tom);
+				character.attemptEscape(
+					character.gameMap,
+					escapeDirection,
+					character.tom
+				);
+			} else {
+				// If not moving towards Tom, choose a random direction to move
+				character.chooseRandomDirection(character.gameMap, 20, character.tom);
+			}
+		}
+
+		// Follow the existing path or move randomly if no path available
+		if (character.path && character.path.length > 0) {
+			character.followPath(character.gameMap);
+		} else {
+			// If there's no path, try moving in any direction
+			character.moveAny(character.gameMap, character.tom);
+		}
+	}
+
+	updateState(character) {
+		this.enterState(character);
+	}
+}
+
 export class PowerUP extends State {
 	enterState(character) {
 		switch (character.constructor.name) {
@@ -125,7 +157,11 @@ export class CatPowerUp extends State {
 
 export class MousePowerUp extends State {
 	enterState(character) {
-		console.log("Mouse is in MousePowerUp state");
+		character.gameMap.activatePowerUPTile();
+		character.disappear();
+		setTimeout(() => {
+			character.state = new RemoveMousePowerUp();
+		}, 6000);
 	}
 
 	updateState(character) {
@@ -135,7 +171,8 @@ export class MousePowerUp extends State {
 
 export class RemoveMousePowerUp extends State {
 	enterState(character) {
-		console.log("Mouse is in RemoveMousePowerUp state");
+		character.appear();
+		character.gameMap.resetPowerUPTile();
 	}
 
 	updateState(character) {

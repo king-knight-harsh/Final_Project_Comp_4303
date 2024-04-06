@@ -72,7 +72,7 @@ async function setup() {
 
 	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
-	jerry = new Mouse(new THREE.Color(0x000000), gameMap);
+	jerry = new Mouse(new THREE.Color(0x000000), gameMap, tom);
 
 	scene.add(gameMap.gameObject);
 
@@ -102,7 +102,7 @@ async function setupModels() {
 
 		// Initialize additional mice
 		for (let i = 1; i <= 3; i++) {
-			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap);
+			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
 			jerryFriend.setModel(resources.get(`jerryFriend${i}`));
 			// Scale Jerry's friends up
 			jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
@@ -181,17 +181,15 @@ function animate() {
 	// Update characters
 	if (jerry) {
 		jerry.update(deltaTime, gameMap, tom);
-		jerry.update(deltaTime, gameMap, tom);
 	}
 
 	jerryFriends.forEach((mouse) => {
 		if (mouse) {
 			mouse.update(deltaTime, gameMap, tom);
-			mouse.update(deltaTime, gameMap, tom);
 			// Each friend checks for Power-Up tile
 		}
 	});
-	dog.update(deltaTime, gameMap, tom);
+	dog.update(deltaTime, gameMap);
 	tom.update(deltaTime, gameMap, controller);
 
 	// Update Tom, Jerry, and Jerry's friends

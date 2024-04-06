@@ -24,7 +24,7 @@ export class Dog extends Character {
 	 * Method to update the bot
 	 * @param {*} deltaTime - The time since the last update
 	 */
-	update(deltaTime, gameMap, tom) {
+	update(deltaTime, gameMap) {
 		super.update(deltaTime, gameMap);
 		this.state.updateState(this);
 	}

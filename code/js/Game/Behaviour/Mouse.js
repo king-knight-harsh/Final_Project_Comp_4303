@@ -1,35 +1,21 @@
 import * as THREE from "three";
 import { Character } from "./Character.js";
+import { AvoidTom } from "./State.js";
 
 export class Mouse extends Character {
-	constructor(mColor, gameMap) {
+	constructor(mColor, gameMap, tom) {
 		super(mColor, gameMap);
 		this.path = [];
 		this.currentTargetIndex = 0;
 		this.topSpeed = 10;
+		this.tom = tom;
+		this.state = new AvoidTom();
+		this.state.enterState(this);
 	}
 
-	update(deltaTime, gameMap, player) {
-		if (this.needsNewPath(player)) {
-			let movingTowardsJerry = this.isMovingTowards(player);
-
-			if (movingTowardsJerry) {
-				let escapeDirection = this.calculateEscapeDirection(player);
-				this.attemptEscape(gameMap, escapeDirection, player);
-			} else {
-				this.chooseRandomDirection(gameMap, 20, player);
-			}
-		}
-
-		// Existing path following logic remains unchanged
-		if (this.path && this.path.length > 0) {
-			this.followPath(deltaTime, gameMap);
-		} else {
-			// Prevent Jerry from moving towards an idle Tom
-			this.chooseRandomDirection(gameMap, 20, player);
-		}
-
+	update(deltaTime, gameMap) {
 		super.update(deltaTime, gameMap);
+		this.state.updateState(this);
 	}
 
 	isMovingTowards(player) {
@@ -140,15 +126,20 @@ export class Mouse extends Character {
 		}
 	}
 
-	followPath(deltaTime, gameMap) {
-		if (this.currentTargetIndex >= this.path.length) return;
+	followPath() {
+		if (this.currentTargetIndex < this.path.length) {
+			let currentTarget = this.gameMap.localize(
+				this.path[this.currentTargetIndex]
+			);
+			let direction = currentTarget.clone().sub(this.location).normalize();
+			this.applyForce(direction.multiplyScalar(this.topSpeed));
 
-		let currentTarget = gameMap.localize(this.path[this.currentTargetIndex]);
-		let direction = currentTarget.clone().sub(this.location).normalize();
-		this.applyForce(direction.multiplyScalar(this.topSpeed));
-
-		if (this.location.distanceTo(currentTarget) < gameMap.tileSize * 0.5) {
-			this.currentTargetIndex++;
+			if (
+				this.location.distanceTo(currentTarget) <
+				this.gameMap.tileSize * 0.5
+			) {
+				this.currentTargetIndex++;
+			}
 		}
 	}
 
@@ -161,5 +152,9 @@ export class Mouse extends Character {
 
 	getCurrentTile(gameMap) {
 		return gameMap.quantize(this.location);
+	}
+
+	getTomLocation() {
+		return this.tom.location;
 	}
 }
