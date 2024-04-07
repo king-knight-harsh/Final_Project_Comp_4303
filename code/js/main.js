@@ -68,7 +68,7 @@ async function setup() {
 	directionalLight.position.set(50, 100, 50);
 	scene.add(directionalLight);
 
-	gameMap.init(scene);
+	gameMap.init(scene, 20);
 
 	tom = new Tom(new THREE.Color(0xff0000), gameMap);
 
@@ -146,7 +146,7 @@ function animate() {
 	if (tom) {
 		tom.update(deltaTime, gameMap, controller);
 	}
-	dog.update(deltaTime, gameMap);
+	dog.update(deltaTime);
 
 	checkForCaptureState.enterState(jerry, tom, jerryFriends, dog, scene);
 

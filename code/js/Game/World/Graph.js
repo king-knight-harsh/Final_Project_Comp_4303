@@ -1,3 +1,4 @@
+import { HaltonSequence } from "../../Util/HaltonSequence.js";
 import { TileNode } from "./TileNode.js";
 import * as THREE from "three";
 
@@ -10,6 +11,7 @@ export class Graph {
 		this.rows = rows;
 		this.obstacles = [];
 		this.powerUpTile = null;
+		this.haltonSequence = new HaltonSequence();
 	}
 
 	initGraph(numberOfObstacles) {
@@ -29,10 +31,24 @@ export class Graph {
 
 	placeObstacles(numberOfObstacles) {
 		let placed = 0;
+		let index = 1; // Halton sequence starts at index 1
 		while (placed < numberOfObstacles) {
-			let index = Math.floor(Math.random() * this.nodes.length);
-			if (!this.nodes[index].isObstacle()) {
-				this.nodes[index].type = TileNode.Type.Obstacle;
+			// Generate positions using the Halton sequence
+			let x = this.haltonSequence.halton(2, index, 0, this.cols);
+			let z = this.haltonSequence.halton(3, index, 0, this.rows);
+			index++;
+
+			// Quantize the positions to fit the grid
+			x = Math.floor(x);
+			z = Math.floor(z);
+
+			let nodeIndex = z * this.cols + x;
+			if (
+				nodeIndex >= 0 &&
+				nodeIndex < this.nodes.length &&
+				!this.nodes[nodeIndex].isObstacle()
+			) {
+				this.nodes[nodeIndex].type = TileNode.Type.Obstacle;
 				placed++;
 			}
 		}

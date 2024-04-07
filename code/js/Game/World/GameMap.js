@@ -35,25 +35,12 @@ export class GameMap {
 		this.goal = null;
 	}
 
-	init(scene, numberOfObstacles = 20) {
+	init(scene, numberOfObstacles) {
 		this.scene = scene;
 		this.graph.initGraph(numberOfObstacles);
 		this.powerUpTile = this.graph.powerUpTile;
 		this.highlight(this.powerUpTile, 0xffff00);
 		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes, scene);
-	}
-
-	halton(base, index, start, end) {
-		let result = 0;
-		let denominator = 1;
-
-		while (index > 0) {
-			denominator = denominator * base;
-			result = result + (index % base) / denominator;
-			index = Math.floor(index / base);
-		}
-		let output = result * (end - start) + start;
-		return output;
 	}
 
 	getPowerUpTileLocation() {
@@ -136,7 +123,7 @@ export class GameMap {
 		return dx + dz;
 	}
 
-	astar(start, end) {
+	aStar(start, end) {
 		let open = new PriorityQueue();
 		let closed = [];
 
@@ -166,16 +153,16 @@ export class GameMap {
 			}
 
 			for (let edge of current.edges) {
-				let neighbour = edge.node;
+				let neighbor = edge.node;
 				let pathCost = edge.cost + g[current.id];
 
-				if (pathCost < g[neighbour.id]) {
-					parent[neighbour.id] = current;
-					g[neighbour.id] = pathCost;
+				if (pathCost < g[neighbor.id]) {
+					parent[neighbor.id] = current;
+					g[neighbor.id] = pathCost;
 
-					if (!closed.includes(neighbour) && !open.includes(neighbour)) {
-						let f = g[neighbour.id] + this.manhattanDistance(neighbour, end);
-						open.enqueue(neighbour, f);
+					if (!closed.includes(neighbor) && !open.includes(neighbor)) {
+						let f = g[neighbor.id] + this.manhattanDistance(neighbor, end);
+						open.enqueue(neighbor, f);
 					}
 				}
 			}
@@ -221,5 +208,18 @@ export class GameMap {
 
 	isPowerUPTileActive() {
 		return this.powerUpTile.type === TileNode.Type.PowerUpActivated;
+	}
+
+	getObstacles(location, radius) {
+		const obstacles = [];
+		for (const node of this.graph.nodes) {
+			if (node.type === TileNode.Type.Obstacle) {
+				const nodePosition = this.localize(node);
+				if (nodePosition.distanceTo(location) <= radius) {
+					obstacles.push(nodePosition);
+				}
+			}
+		}
+		return obstacles;
 	}
 }

@@ -304,14 +304,6 @@ export class Character {
 		return total;
 	}
 
-	/**
-
-	Attempts to get the collision point
-
-	Takes in the obstacle position, obstacle radius
-	and prediction of where the character will be in the future
-
-	**/
 	getCollision(obstaclePosition, obstacleRadius, prediction) {
 		// If the character itself is colliding with the obstacle
 		if (
