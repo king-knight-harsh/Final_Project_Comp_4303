@@ -34,7 +34,6 @@ export class Tom extends Character {
 			this.state = new CatPowerUp();
 		}
 
-		console.log(this.state.constructor.name); // Debugging
 		super.update(deltaTime, gameMap);
 		this.state.updateState(this, controller);
 	}

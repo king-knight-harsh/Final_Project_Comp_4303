@@ -1,5 +1,4 @@
 import { Character } from "./Character.js";
-import * as THREE from "three"; // Assuming State.js exports these
 import { State } from "./State.js";
 
 export class Dog extends Character {

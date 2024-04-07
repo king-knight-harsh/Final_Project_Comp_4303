@@ -9,12 +9,15 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
 import { Dog } from "./Game/Behaviour/Dog.js";
 import { setupCameras } from "./Util/CameraSetup.js";
+import { initializeCharacters } from "./Util/InitializeCharacter.js";
+import { CheckForCapture } from "./Game/Behaviour/State.js";
 
 // Create Scene
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+let checkForCaptureState = new CheckForCapture();
 
 // Camera Setup
 const mapCamera = new THREE.PerspectiveCamera(
@@ -30,6 +33,7 @@ orbitControls.update(); // Initial update
 // Game Components
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
+
 let tomCamera, jerryCamera;
 let activeCamera = mapCamera;
 let controller;
@@ -88,8 +92,16 @@ async function setup() {
 	// Model setup
 	await setupModels();
 
-	// Initial positions
-	initializeCharacters();
+	initializeCharacters(
+		gameMap,
+		jerry,
+		tom,
+		dog,
+		jerryFriends,
+		scene,
+		mapCamera,
+		activeCamera
+	);
 
 	// Start animation loop
 	animate();
@@ -115,30 +127,6 @@ async function setupModels() {
 	});
 }
 
-function initializeCharacters() {
-	// Get a random starting place for Jerry and Tom
-	let startNPC = gameMap.graph.getRandomEmptyTile();
-	let startPlayer = gameMap.graph.getRandomEmptyTile();
-	let dogPlayer = gameMap.graph.getRandomEmptyTile();
-	// Set initial locations
-	jerry.location = gameMap.localize(startNPC);
-	tom.location = gameMap.localize(startPlayer);
-	dog.location = gameMap.localize(dogPlayer);
-
-	scene.add(jerry.gameObject);
-	scene.add(tom.gameObject);
-	scene.add(dog.gameObject);
-
-	jerryFriends.forEach((mouse, index) => {
-		let startMouse = gameMap.graph.getRandomEmptyTile();
-		mouse.location = gameMap.localize(startMouse);
-		scene.add(mouse.gameObject);
-	});
-
-	// Active camera starts with the map view
-	activeCamera = mapCamera;
-}
-
 function animate() {
 	requestAnimationFrame(animate);
 	let deltaTime = clock.getDelta();
@@ -160,89 +148,11 @@ function animate() {
 	}
 	dog.update(deltaTime, gameMap);
 
-	// Update Tom, Jerry, and Jerry's friends
-	checkForCapture();
+	checkForCaptureState.enterState(jerry, tom, jerryFriends, dog, scene);
 
 	orbitControls.update();
 
 	renderer.render(scene, activeCamera); // Use the active camera
-}
-
-function checkForCapture() {
-	// Check if Jerry has been captured
-	if (jerry && tom.location.distanceTo(jerry.location) < 1.5) {
-		console.log("Tom has caught Jerry!");
-		scene.remove(jerry.gameObject);
-		jerry = null;
-	}
-	// Filter Jerry's friends to remove any that Tom catches
-	jerryFriends = jerryFriends.filter((friend) => {
-		if (tom.location.distanceTo(friend.location) < 1.5) {
-			console.log("Tom has caught a friend!");
-			scene.remove(friend.gameObject);
-			return false;
-		}
-		return true;
-	});
-	if (
-		tom &&
-		dog.location.distanceTo(tom.location) < 1.5 &&
-		!dog.isPowerActivated
-	) {
-		console.log("spike has captured tom");
-		scene.remove(tom.gameObject);
-		tom = null;
-	}
-	checkForReset();
-}
-
-function checkForReset() {
-	if ((!jerry && jerryFriends.length === 0) || !tom) {
-		resetGame();
-		return;
-	}
-}
-
-function resetGame() {
-	// Create modal HTML
-	const modalHTML = `
-        <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="gameOverModalLabel">Game Over</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        All characters have been caught!
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" id="restartBtn">Restart</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-	// Append modal HTML to document body
-	document.body.insertAdjacentHTML("beforeend", modalHTML);
-
-	// Show the modal
-	const modal = new bootstrap.Modal(document.getElementById("gameOverModal"));
-	modal.show();
-
-	// Set the opacity of the modal backdrop inline
-	const modalBackdrop = document.querySelector(".modal-backdrop");
-	if (modalBackdrop) {
-		modalBackdrop.style.opacity = "0"; // Adjust the opacity value as needed
-	}
-
-	// Add event listener to restart button
-	const restartBtn = document.getElementById("restartBtn");
-	restartBtn.addEventListener("click", () => {
-		// Refresh the page to restart the game
-		location.reload();
-	});
 }
 
 setup();
