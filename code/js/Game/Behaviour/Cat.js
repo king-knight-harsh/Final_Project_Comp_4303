@@ -85,12 +85,12 @@ export class CatPowerUp extends State {
 		character.gameMap.activatePowerUPTile();
 		character.isPowerActivated = true;
 		setTimeout(() => {
-			character.switchState(new RemoveCatPowerUp(character));
+			character.state = new RemoveCatPowerUp();
 		}, 6000);
 	}
 
 	updateState(character) {
-		// Handle logic specific to the power-up state here. Avoid re-entering.
+		this.enterState(character);
 	}
 }
 
@@ -98,11 +98,11 @@ export class RemoveCatPowerUp extends State {
 	enterState(character) {
 		character.setSpeed(5);
 		character.gameMap.resetPowerUPTile();
+		character.state = new IdleState(character);
 		character.isPowerActivated = false;
-		character.switchState(new IdleState());
 	}
 
 	updateState(character) {
-		// Again, avoid re-entering the state. Maybe check for conditions to transition out.
+		this.enterState(character);
 	}
 }

@@ -8,6 +8,7 @@ import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
 import { Dog } from "./Game/Behaviour/Dog.js";
+import { setupCameras } from "./Util/CameraSetup.js";
 
 // Create Scene
 const scene = new THREE.Scene();
@@ -72,7 +73,15 @@ async function setup() {
 	jerry = new Mouse(new THREE.Color(0x000000), gameMap, tom);
 
 	// Camera setup
-	setupCameras();
+	setupCameras(
+		mapCamera,
+		tomCamera,
+		jerryCamera,
+		activeCamera,
+		tom,
+		jerry,
+		scene
+	);
 
 	controller = new Controller(document, activeCamera);
 
@@ -104,41 +113,6 @@ async function setupModels() {
 			jerryFriends.push(jerryFriend);
 		}
 	});
-}
-
-function setupCameras() {
-	// Camera setup for the full map
-	mapCamera.fov = 60;
-	mapCamera.position.set(0, 40, 40);
-	mapCamera.lookAt(0, 0, 0);
-	mapCamera.updateProjectionMatrix();
-	scene.add(mapCamera);
-
-	tomCamera = new THREE.PerspectiveCamera(
-		75,
-		window.innerWidth / window.innerHeight,
-		0.1,
-		100
-	);
-
-	// Initialize tomCamera
-	tomCamera.position.set(0, 2, -5);
-	tomCamera.lookAt(tom.gameObject.position);
-	tom.gameObject.add(tomCamera);
-
-	// Initialize jerryCamera
-	jerryCamera = new THREE.PerspectiveCamera(
-		75,
-		window.innerWidth / window.innerHeight,
-		0.1,
-		100
-	);
-	jerryCamera.position.set(0, 1, -3);
-	jerryCamera.lookAt(jerry.gameObject.position);
-	jerry.gameObject.add(jerryCamera);
-
-	// Set the initial active camera
-	activeCamera = mapCamera; // Start with the map overview camera
 }
 
 function initializeCharacters() {
@@ -210,7 +184,11 @@ function checkForCapture() {
 		}
 		return true;
 	});
-	if (tom && dog.location.distanceTo(tom.location) < 1.5) {
+	if (
+		tom &&
+		dog.location.distanceTo(tom.location) < 1.5 &&
+		!dog.isPowerActivated
+	) {
 		console.log("spike has captured tom");
 		scene.remove(tom.gameObject);
 		tom = null;

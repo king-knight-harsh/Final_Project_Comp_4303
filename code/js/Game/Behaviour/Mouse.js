@@ -226,7 +226,7 @@ export class MousePowerUp extends State {
 
 export class RemoveMousePowerUp extends State {
 	enterState(character) {
-		character.respawnAtRandomLocation();
+		// character.respawnAtRandomLocation();
 		character.appear();
 		character.gameMap.resetPowerUPTile();
 		character.isPowerActivated = false;

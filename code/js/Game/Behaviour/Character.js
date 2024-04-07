@@ -40,7 +40,6 @@ export class Character {
 		this.isPowerActivated = false;
 	}
 
-	// Set the model for the character
 	setModel(model) {
 		model.position.y = model.position.y + 1;
 		// Bounding box for the object
@@ -62,14 +61,11 @@ export class Character {
 	}
 
 	disappear() {
-		// Hide the mouse character or remove it from the scene
-		this.gameObject.visible = false; // Assuming gameObject is a property that references the Three.js mesh of the mouse character
+		this.gameObject.visible = false;
 	}
 
-	// Method to make the mouse reappear
 	appear() {
-		// Show the mouse character or add it back to the scene
-		this.gameObject.visible = true; // Assuming gameObject is a property that references the Three.js mesh of the mouse character
+		this.gameObject.visible = true;
 	}
 
 	pursue(character, time) {
@@ -80,7 +76,6 @@ export class Character {
 		return this.seek(prediction);
 	}
 
-	// update character
 	wander() {
 		let d = 20;
 		let r = 5;
@@ -109,18 +104,14 @@ export class Character {
 	update(deltaTime, gameMap) {
 		this.physics(gameMap);
 
-		// Additional logic to check for being stuck on an obstacle
 		let currentNode = gameMap.quantize(this.location);
 		if (currentNode && currentNode.type === TileNode.Type.Obstacle) {
 			console.log("Character is on an obstacle, respawning...");
 			this.respawnAtRandomLocation();
 		}
-		// update velocity via acceleration
 		this.velocity.addScaledVector(this.acceleration, deltaTime);
 
 		if (this.velocity.length() > 0) {
-			// rotate the character to ensure they face
-			// the direction of movement
 			if (this.velocity.x != 0 || this.velocity.z != 0) {
 				let angle = Math.atan2(this.velocity.x, this.velocity.z);
 				this.gameObject.rotation.y = angle;
@@ -130,11 +121,9 @@ export class Character {
 				this.velocity.setLength(this.topSpeed);
 			}
 
-			// update location via velocity
 			this.location.addScaledVector(this.velocity, deltaTime);
 		}
 
-		// set the game object position
 		this.gameObject.position.set(
 			this.location.x,
 			this.location.y,
