@@ -6,8 +6,8 @@ import { PathFinding } from "../../Util/PathFinding.js";
 export class Dog extends Character {
 	constructor(color, gameMap, tom) {
 		super(color, gameMap);
-		this.pathFinding = new PathFinding(gameMap);
 		this.topSpeed = 4;
+		this.pathFinding = new PathFinding(gameMap);
 		this.state = new GoToPowerUP();
 		this.state.enterState(this);
 		this.tom = tom;
@@ -30,27 +30,14 @@ export class Dog extends Character {
 		// Call the base class update (Character's update logic)
 		super.update(deltaTime, this.gameMap);
 
-		// Collision Avoidance Logic
-		const avoidanceForce = this.avoidObstacles(this.gameMap);
-		this.applyForce(avoidanceForce);
+		// let steer = this.avoidCollision(this.gameMap.getObstacles(), 2);
+
+		// if (steer) {
+		// 	this.applyForce(steer);
+		// }
 
 		// Existing state update logic...
 		this.state.updateState(this);
-	}
-
-	avoidObstacles(gameMap) {
-		const nearbyObstacles = gameMap.getObstacles(this.location, 15); // Check within a radius of 15 units
-		let avoidanceForce = new THREE.Vector3();
-
-		// Calculate a single avoidance force vector based on nearby obstacles
-		nearbyObstacles.forEach((obstaclePos) => {
-			const diff = this.location.clone().sub(obstaclePos);
-			const distance = diff.length();
-			diff.normalize().divideScalar(distance); // The closer the obstacle, the stronger the force
-			avoidanceForce.add(diff);
-		});
-
-		return avoidanceForce;
 	}
 
 	setSpeed(topSpeed) {
@@ -101,7 +88,7 @@ export class DogPowerUp extends State {
 			console.error("Target node for Tom's location is not valid.");
 			return;
 		}
-		let path = this.pathFinding.aStar(
+		let path = character.pathFinding.aStar(
 			character.gameMap.quantize(character.location),
 			targetNode
 		);

@@ -14,7 +14,7 @@ export class Graph {
 		this.haltonSequence = new HaltonSequence();
 	}
 
-	initGraph(numberOfObstacles) {
+	initGraph(numberOfObstacles, obstaclesList) {
 		this.nodes = [];
 		for (let j = 0; j < this.rows; j++) {
 			for (let i = 0; i < this.cols; i++) {
@@ -24,12 +24,12 @@ export class Graph {
 			}
 		}
 
-		this.placeObstacles(numberOfObstacles);
+		this.placeObstacles(numberOfObstacles, obstaclesList);
 		this.placePowerUp();
 		this.establishConnections();
 	}
 
-	placeObstacles(numberOfObstacles) {
+	placeObstacles(numberOfObstacles, obstaclesList) {
 		let placed = 0;
 		let index = 1; // Halton sequence starts at index 1
 		while (placed < numberOfObstacles) {
@@ -49,6 +49,7 @@ export class Graph {
 				!this.nodes[nodeIndex].isObstacle()
 			) {
 				this.nodes[nodeIndex].type = TileNode.Type.Obstacle;
+				obstaclesList.push(this.nodes[nodeIndex]);
 				placed++;
 			}
 		}

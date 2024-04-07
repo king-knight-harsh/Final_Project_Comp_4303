@@ -2,10 +2,6 @@ import { TileNode } from "./TileNode.js";
 import * as THREE from "three";
 import { MapRenderer } from "./MapRenderer";
 import { Graph } from "./Graph";
-import { PriorityQueue } from "../../Util/PriorityQueue";
-import { VectorUtil } from "../../Util/VectorUtil";
-import { Tom } from "../Behaviour/Cat.js";
-import { Mouse } from "../Behaviour/Mouse.js";
 
 export class GameMap {
 	// Constructor for our GameMap class
@@ -33,11 +29,12 @@ export class GameMap {
 
 		this.flowfield = new Map();
 		this.goal = null;
+		this.obstacles = [];
 	}
 
 	init(scene, numberOfObstacles) {
 		this.scene = scene;
-		this.graph.initGraph(numberOfObstacles);
+		this.graph.initGraph(numberOfObstacles, this.obstacles);
 		this.powerUpTile = this.graph.powerUpTile;
 		this.highlight(this.powerUpTile, 0xffff00);
 		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes, scene);
@@ -89,6 +86,10 @@ export class GameMap {
 		return node;
 	}
 
+	getObstacles() {
+		return this.obstacles;
+	}
+
 	/**
 	 * The method to find the current tile
 	 * @param {THREE.Vector3} location - The location vector of the bot
@@ -116,18 +117,5 @@ export class GameMap {
 
 	isPowerUPTileActive() {
 		return this.powerUpTile.type === TileNode.Type.PowerUpActivated;
-	}
-
-	getObstacles(location, radius) {
-		const obstacles = [];
-		for (const node of this.graph.nodes) {
-			if (node.type === TileNode.Type.Obstacle) {
-				const nodePosition = this.localize(node);
-				if (nodePosition.distanceTo(location) <= radius) {
-					obstacles.push(nodePosition);
-				}
-			}
-		}
-		return obstacles;
 	}
 }

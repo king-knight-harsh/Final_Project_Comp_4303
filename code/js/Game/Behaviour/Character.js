@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { VectorUtil } from "../../Util/VectorUtil.js";
 import { TileNode } from "../World/TileNode.js";
-
+import { CollisionDetector } from "../../Util/CollisionDetector.js";
 export class Character {
 	// Character Constructor
 	constructor(mColor, gameMap) {
@@ -42,17 +42,11 @@ export class Character {
 
 	setModel(model) {
 		model.position.y = model.position.y + 1;
-		// Bounding box for the object
+
 		var bbox = new THREE.Box3().setFromObject(model);
 
-		// Get the depth of the object for avoiding collisions
-		// Of course we could use a bounding box,
-		// but for now we will just use one dimension as "size"
-		// (this would work better if the model is square)
 		let dz = bbox.max.z - bbox.min.z;
 
-		// Scale the object based on how
-		// large we want it to be
 		let scale = this.size / dz;
 		model.scale.set(scale, scale, scale);
 
@@ -132,7 +126,6 @@ export class Character {
 		this.acceleration.multiplyScalar(0);
 	}
 
-	// check edges
 	checkEdges(gameMap) {
 		let node = gameMap.quantize(this.location);
 
@@ -362,26 +355,6 @@ export class Character {
 		return null;
 	}
 
-	/**
-
-	This method does two things:
-	1. Draws a line to show the predicted ray 
-		for collision testing
-	2. Sets the character colour based on
-		whether they or their predicted ray 
-		has collided with an obstacle
-
-	Takes in four vectors:
-	v1: the current character location
-	v2: the prediction (or end of the vector)
-	w1: the end of whisker 1
-	v2: the end of whisker 2
-
-	and takes in a "hit" boolean of whether 
-	the character or their predicted ray 
-	has hit an obstacle
-
-  	**/
 	debugLine(v1, v2, w1, w2, hit) {
 		if (this.ray !== null) {
 			this.scene.remove(this.ray);
@@ -439,7 +412,7 @@ export class Character {
 			});
 		}
 	}
-	// Apply force to our character
+
 	applyForce(force) {
 		// here, we are saying force = force/mass
 		force.divideScalar(this.mass);
@@ -447,7 +420,6 @@ export class Character {
 		this.acceleration.add(force);
 	}
 
-	// simple physics
 	physics(gameMap) {
 		this.checkEdges(gameMap);
 		// friction
