@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Character } from "./Character.js";
-import { AvoidTom } from "./State.js";
+import { State } from "./State.js";
 
 export class Mouse extends Character {
 	constructor(mColor, gameMap, tom) {
@@ -150,11 +150,90 @@ export class Mouse extends Character {
 		);
 	}
 
-	getCurrentTile(gameMap) {
-		return gameMap.quantize(this.location);
+	setSpeed(topSpeed) {
+		this.topSpeed = topSpeed;
 	}
 
 	getTomLocation() {
 		return this.tom.location;
+	}
+}
+
+export class AvoidTom extends State {
+	enterState(character) {
+		// First, check if the character is on a power-up tile
+		const currentTile = character.gameMap.getCurrentTile(character.location);
+		const powerUpTile = character.gameMap.getNode(
+			character.gameMap.getPowerUpTileLocation().x,
+			character.gameMap.getPowerUpTileLocation().z
+		);
+
+		// If the character is on the power-up tile, switch to the PowerUP state
+		if (
+			currentTile &&
+			powerUpTile &&
+			currentTile.x === powerUpTile.x &&
+			currentTile.z === powerUpTile.z &&
+			!character.isPowerActivated
+		) {
+			character.state = new MousePowerUp();
+			return;
+		}
+		// Determine if the character needs a new path to avoid Tom
+		if (character.needsNewPath(character.tom)) {
+			// Check if the character is moving towards Tom and attempt to escape
+			if (character.isMovingTowards(character.tom)) {
+				let escapeDirection = character.calculateEscapeDirection(character.tom);
+				character.attemptEscape(
+					character.gameMap,
+					escapeDirection,
+					character.tom
+				);
+			} else {
+				// If not moving towards Tom, choose a random direction to move
+				character.chooseRandomDirection(character.gameMap, 20, character.tom);
+			}
+		}
+
+		// Follow the existing path or move randomly if no path available
+		if (character.path && character.path.length > 0) {
+			character.followPath(character.gameMap);
+		} else {
+			// If there's no path, try moving in any direction
+			character.moveAny(character.gameMap, character.tom);
+		}
+	}
+
+	updateState(character) {
+		this.enterState(character);
+	}
+}
+
+export class MousePowerUp extends State {
+	enterState(character) {
+		character.disappear();
+		character.gameMap.activatePowerUPTile();
+		character.isPowerActivated = true;
+		setTimeout(() => {
+			character.state = new RemoveMousePowerUp();
+		}, 6000);
+	}
+
+	updateState(character) {
+		this.enterState(character);
+	}
+}
+
+export class RemoveMousePowerUp extends State {
+	enterState(character) {
+		character.respawnAtRandomLocation();
+		character.appear();
+		character.gameMap.resetPowerUPTile();
+		character.isPowerActivated = false;
+		character.state = new AvoidTom();
+	}
+
+	updateState(character) {
+		this.enterState(character);
 	}
 }

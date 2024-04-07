@@ -14,7 +14,7 @@ export class GameMap {
 
 		this.width = 50;
 		this.depth = 50;
-		this.powerUpTilesLocation = null;
+		this.powerUpTile = null;
 		// We also need to define a tile size
 		// for our tile based map
 		this.tileSize = 5;
@@ -33,14 +33,13 @@ export class GameMap {
 
 		this.flowfield = new Map();
 		this.goal = null;
-		this.powerUpTiles = new Map();
 	}
 
-	init(scene, numberOfObstacles = 10) {
+	init(scene, numberOfObstacles = 20) {
 		this.scene = scene;
 		this.graph.initGraph(numberOfObstacles);
-		this.powerUpTilesLocation = this.graph.powerUpLocation;
-		this.highlight(this.powerUpTilesLocation, 0xffff00);
+		this.powerUpTile = this.graph.powerUpTile;
+		this.highlight(this.powerUpTile, 0xffff00);
 		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes, scene);
 	}
 
@@ -58,7 +57,7 @@ export class GameMap {
 	}
 
 	getPowerUpTileLocation() {
-		return this.powerUpTilesLocation;
+		return this.powerUpTile;
 	}
 
 	// Method to get location from a node
@@ -211,10 +210,16 @@ export class GameMap {
 	}
 
 	activatePowerUPTile() {
-		this.highlight(this.powerUpTilesLocation, 0x00ff00);
+		this.powerUpTile.type = TileNode.Type.PowerUpActivated;
+		this.highlight(this.powerUpTile, 0x00ff00);
 	}
 
 	resetPowerUPTile() {
-		this.highlight(this.powerUpTilesLocation, 0xffff00);
+		this.powerUpTile.type = TileNode.Type.PowerUp;
+		this.highlight(this.powerUpTile, 0xffff00);
+	}
+
+	isPowerUPTileActive() {
+		return this.powerUpTile.type === TileNode.Type.PowerUpActivated;
 	}
 }

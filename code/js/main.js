@@ -38,9 +38,6 @@ let controller;
 let dog, jerry, tom;
 let jerryFriends = []; // Assuming initialization of Jerry's friends happens later
 
-// Radius for capture
-let captureRadius = 1;
-
 const resources = new Resources(resourceFiles);
 
 // Update camera reference in the controller based on interactions or game events
@@ -73,8 +70,6 @@ async function setup() {
 	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
 	jerry = new Mouse(new THREE.Color(0x000000), gameMap, tom);
-
-	scene.add(gameMap.gameObject);
 
 	// Camera setup
 	setupCameras();
@@ -155,10 +150,7 @@ function initializeCharacters() {
 	jerry.location = gameMap.localize(startNPC);
 	tom.location = gameMap.localize(startPlayer);
 	dog.location = gameMap.localize(dogPlayer);
-	const dogOffset = 0.5; // Adjust this value as needed
-	dog.gameObject.position
-		.copy(dog.location)
-		.add(new THREE.Vector3(0, dogOffset, 0));
+
 	scene.add(jerry.gameObject);
 	scene.add(tom.gameObject);
 	scene.add(dog.gameObject);
@@ -189,8 +181,10 @@ function animate() {
 			// Each friend checks for Power-Up tile
 		}
 	});
+	if (tom) {
+		tom.update(deltaTime, gameMap, controller);
+	}
 	dog.update(deltaTime, gameMap);
-	tom.update(deltaTime, gameMap, controller);
 
 	// Update Tom, Jerry, and Jerry's friends
 	checkForCapture();
@@ -202,21 +196,21 @@ function animate() {
 
 function checkForCapture() {
 	// Check if Jerry has been captured
-	if (jerry && tom.location.distanceTo(jerry.location) < captureRadius) {
+	if (jerry && tom.location.distanceTo(jerry.location) < 1.5) {
 		console.log("Tom has caught Jerry!");
 		scene.remove(jerry.gameObject);
 		jerry = null;
 	}
 	// Filter Jerry's friends to remove any that Tom catches
 	jerryFriends = jerryFriends.filter((friend) => {
-		if (tom.location.distanceTo(friend.location) < captureRadius) {
+		if (tom.location.distanceTo(friend.location) < 1.5) {
 			console.log("Tom has caught a friend!");
 			scene.remove(friend.gameObject);
 			return false;
 		}
 		return true;
 	});
-	if (tom && dog.location.distanceTo(tom.location) < captureRadius) {
+	if (tom && dog.location.distanceTo(tom.location) < 1.5) {
 		console.log("spike has captured tom");
 		scene.remove(tom.gameObject);
 		tom = null;

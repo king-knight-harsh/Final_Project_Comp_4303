@@ -9,7 +9,7 @@ export class Graph {
 		this.cols = cols;
 		this.rows = rows;
 		this.obstacles = [];
-		this.powerUpLocation = null;
+		this.powerUpTile = null;
 	}
 
 	initGraph(numberOfObstacles) {
@@ -44,10 +44,7 @@ export class Graph {
 			let index = Math.floor(Math.random() * this.nodes.length);
 			if (!this.nodes[index].isObstacle()) {
 				this.nodes[index].type = TileNode.Type.PowerUp;
-				this.powerUpLocation = {
-					x: this.nodes[index].x,
-					z: this.nodes[index].z,
-				};
+				this.powerUpTile = this.nodes[index];
 				placed = true;
 			}
 		}

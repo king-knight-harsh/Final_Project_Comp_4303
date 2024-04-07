@@ -3,6 +3,7 @@ export class TileNode {
 		Ground: Symbol("ground"),
 		Obstacle: Symbol("obstacle"),
 		PowerUp: Symbol("powerUp"),
+		PowerUpActivated: Symbol("powerUpActivated"),
 	});
 
 	// Node Constructor

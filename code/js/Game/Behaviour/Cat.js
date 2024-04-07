@@ -22,48 +22,33 @@ export class Tom extends Character {
 	}
 
 	update(deltaTime, gameMap, controller) {
-		this.state.updateState(this, controller);
-		super.update(deltaTime, gameMap);
-
-		// After updating, check if moved significantly
+		// Check for landing on a PowerUp tile
+		const currentTile = this.getCurrentTile(gameMap);
+		const powerUpTileLocation = gameMap.getPowerUpTileLocation();
 		if (
-			this.location.distanceTo(this.previousPosition) >
-			this.significantMoveThreshold
+			powerUpTileLocation &&
+			currentTile.x === powerUpTileLocation.x &&
+			currentTile.z === powerUpTileLocation.z &&
+			!this.isPowerActivated
 		) {
-			this.previousPosition.copy(this.location); // Update previous position to current
-			this.hasMovedSignificantly = true;
-		} else {
-			this.hasMovedSignificantly = false;
+			this.state = new CatPowerUp();
 		}
+
+		console.log(this.state.constructor.name); // Debugging
+		super.update(deltaTime, gameMap);
+		this.state.updateState(this, controller);
 	}
 
 	getCurrentTile(gameMap) {
 		return gameMap.quantize(this.location);
 	}
 
-	movedSignificantly() {
-		return this.hasMovedSignificantly;
+	setSpeed(topSpeed) {
+		this.topSpeed = topSpeed;
 	}
 
-	// Set the model for the character
-	setModel(model) {
-		model.position.y = model.position.y + 1;
-		// Bounding box for the object
-		var bbox = new THREE.Box3().setFromObject(model);
-
-		// Get the depth of the object for avoiding collisions
-		// Of course we could use a bounding box,
-		// but for now we will just use one dimension as "size"
-		// (this would work better if the model is square)
-		let dz = bbox.max.z - bbox.min.z;
-
-		// Scale the object based on how
-		// large we want it to be
-		let scale = this.size / dz;
-		model.scale.set(scale, scale, scale);
-
-		this.gameObject = new THREE.Group();
-		this.gameObject.add(model);
+	movedSignificantly() {
+		return this.hasMovedSignificantly;
 	}
 }
 
@@ -91,5 +76,33 @@ export class MovingState extends State {
 			force.setLength(50);
 			player.applyForce(force);
 		}
+	}
+}
+
+export class CatPowerUp extends State {
+	enterState(character) {
+		character.setSpeed(10);
+		character.gameMap.activatePowerUPTile();
+		character.isPowerActivated = true;
+		setTimeout(() => {
+			character.switchState(new RemoveCatPowerUp(character));
+		}, 6000);
+	}
+
+	updateState(character) {
+		// Handle logic specific to the power-up state here. Avoid re-entering.
+	}
+}
+
+export class RemoveCatPowerUp extends State {
+	enterState(character) {
+		character.setSpeed(5);
+		character.gameMap.resetPowerUPTile();
+		character.isPowerActivated = false;
+		character.switchState(new IdleState());
+	}
+
+	updateState(character) {
+		// Again, avoid re-entering the state. Maybe check for conditions to transition out.
 	}
 }

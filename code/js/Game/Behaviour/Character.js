@@ -36,6 +36,8 @@ export class Character {
 		this.ray2 = null;
 		this.whiskerAngle = Math.PI / 3;
 		this.lastValidLocation = new THREE.Vector3(0, 0, 0);
+
+		this.isPowerActivated = false;
 	}
 
 	// Set the model for the character
@@ -111,7 +113,7 @@ export class Character {
 		let currentNode = gameMap.quantize(this.location);
 		if (currentNode && currentNode.type === TileNode.Type.Obstacle) {
 			console.log("Character is on an obstacle, respawning...");
-			this.respawnAtRandomLocation(gameMap);
+			this.respawnAtRandomLocation();
 		}
 		// update velocity via acceleration
 		this.velocity.addScaledVector(this.acceleration, deltaTime);
@@ -491,11 +493,14 @@ export class Character {
 		return steer;
 	}
 
-	respawnAtRandomLocation(gameMap) {
-		let randomTile = gameMap.graph.getRandomEmptyTile();
+	getCurrentTile(gameMap) {
+		return gameMap.quantize(this.location);
+	}
+
+	respawnAtRandomLocation() {
+		let randomTile = this.gameMap.graph.getRandomEmptyTile();
 		if (randomTile) {
-			this.location = gameMap.localize(randomTile);
-			console.log("Respawned character to a new location.");
+			this.location = this.gameMap.localize(randomTile);
 		}
 	}
 }
