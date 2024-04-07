@@ -76,7 +76,7 @@ export class DogPowerUp extends State {
 			console.error("Target node for Tom's location is not valid.");
 			return;
 		}
-		let path = character.gameMap.astar(
+		let path = character.gameMap.aStar(
 			character.gameMap.quantize(character.location),
 			targetNode
 		);
