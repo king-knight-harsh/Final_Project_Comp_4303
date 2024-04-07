@@ -36,8 +36,6 @@ export class Character {
 		this.ray2 = null;
 		this.whiskerAngle = Math.PI / 3;
 		this.lastValidLocation = new THREE.Vector3(0, 0, 0);
-
-		this.isPowerActivated = false;
 	}
 
 	setModel(model) {
@@ -95,10 +93,10 @@ export class Character {
 		return this.seek(target);
 	}
 
-	update(deltaTime, gameMap) {
-		this.physics(gameMap);
+	update(deltaTime) {
+		this.physics();
 
-		let currentNode = gameMap.quantize(this.location);
+		let currentNode = this.gameMap.quantize(this.location);
 		if (currentNode && currentNode.type === TileNode.Type.Obstacle) {
 			console.log("Character is on an obstacle, respawning...");
 			this.respawnAtRandomLocation();
@@ -126,8 +124,8 @@ export class Character {
 		this.acceleration.multiplyScalar(0);
 	}
 
-	checkEdges(gameMap) {
-		let node = gameMap.quantize(this.location);
+	checkEdges() {
+		let node = this.gameMap.quantize(this.location);
 
 		// Assuming you keep track of the last valid node/location
 		if (!node) {
@@ -140,7 +138,7 @@ export class Character {
 		// Update lastValidLocation with current location after successful edge checks
 		this.lastValidLocation = this.location.clone();
 
-		let nodeLocation = gameMap.localize(node);
+		let nodeLocation = this.gameMap.localize(node);
 
 		// Add a guard clause to ensure node has the hasEdgeTo method
 		if (typeof node.hasEdgeTo !== "function") {
@@ -149,7 +147,7 @@ export class Character {
 		}
 
 		if (!node.hasEdgeTo(node.x - 1, node.z)) {
-			let nodeEdge = nodeLocation.x - gameMap.tileSize / 2;
+			let nodeEdge = nodeLocation.x - this.gameMap.tileSize / 2;
 			let characterEdge = this.location.x - this.size / 2;
 			if (characterEdge < nodeEdge) {
 				this.location.x = nodeEdge + this.size / 2;
@@ -157,14 +155,14 @@ export class Character {
 		}
 
 		if (!node.hasEdgeTo(node.x + 1, node.z)) {
-			let nodeEdge = nodeLocation.x + gameMap.tileSize / 2;
+			let nodeEdge = nodeLocation.x + this.gameMap.tileSize / 2;
 			let characterEdge = this.location.x + this.size / 2;
 			if (characterEdge > nodeEdge) {
 				this.location.x = nodeEdge - this.size / 2;
 			}
 		}
 		if (!node.hasEdgeTo(node.x, node.z - 1)) {
-			let nodeEdge = nodeLocation.z - gameMap.tileSize / 2;
+			let nodeEdge = nodeLocation.z - this.gameMap.tileSize / 2;
 			let characterEdge = this.location.z - this.size / 2;
 			if (characterEdge < nodeEdge) {
 				this.location.z = nodeEdge + this.size / 2;
@@ -172,7 +170,7 @@ export class Character {
 		}
 
 		if (!node.hasEdgeTo(node.x, node.z + 1)) {
-			let nodeEdge = nodeLocation.z + gameMap.tileSize / 2;
+			let nodeEdge = nodeLocation.z + this.gameMap.tileSize / 2;
 			let characterEdge = this.location.z + this.size / 2;
 			if (characterEdge > nodeEdge) {
 				this.location.z = nodeEdge - this.size / 2;
@@ -182,235 +180,37 @@ export class Character {
 		this.lastValidLocation.copy(this.location);
 	}
 
-	avoidCollision(obstacles, time) {
-		// An empty steering behaviour
-		let steer = new THREE.Vector3();
-		let prediction;
-		let total = new THREE.Vector3();
-		let prediction_1;
-		let prediction_3;
+	avoidCollision(obstacles) {
+		// Define the forward ray for collision detection
+		const forwardRayDirection = this.velocity.clone().normalize();
+		const forwardRayLength = 2; // Length of the ray
 
-		for (let i = 0; i < obstacles.length; i++) {
-			prediction = VectorUtil.addScaledVector(
-				this.location,
-				this.velocity,
-				time
-			);
+		// Create a Raycaster for the forward ray
+		const forwardRay = new THREE.Raycaster(
+			this.location,
+			forwardRayDirection,
+			0,
+			forwardRayLength
+		);
+		const intersects = forwardRay.intersectObjects(obstacles, true);
 
-			let futureLocation = this.velocity.clone();
-			futureLocation.setLength(5);
-			futureLocation.add(this.location);
-			let angle = Math.atan2(this.velocity.x, this.velocity.z);
-			let newa = angle + Math.PI / 4;
-			let newb = angle - Math.PI / 4;
+		let avoidanceForce = new THREE.Vector3();
 
-			prediction_1 = new THREE.Vector3(
-				5 * Math.sin(newa),
-				0,
-				5 * Math.cos(newa)
-			);
-			prediction_1.add(futureLocation);
-			prediction_3 = new THREE.Vector3(
-				5 * Math.sin(newb),
-				0,
-				5 * Math.cos(newb)
-			);
-			prediction_3.add(futureLocation);
+		// Check if there is an intersection with obstacles
+		if (intersects.length > 0) {
+			const closestObstacle = intersects[0];
 
-			// Get the obstacle position and radius
-			let obstaclePosition = obstacles[i].position;
-			let obstacleRadius = obstacles[i].geometry.parameters.radius;
+			// Determine the avoidance force direction (steer opposite the forward direction)
+			// You can adjust the force magnitude and direction as necessary
+			avoidanceForce
+				.subVectors(this.location, closestObstacle.point)
+				.normalize()
+				.multiplyScalar(this.topSpeed * 2);
 
-			// Try and get the collision
-			let collisionPoint = this.getCollision(
-				obstaclePosition,
-				obstacleRadius,
-				prediction
-			);
-			let collisionPoint_1 = this.getCollision(
-				obstaclePosition,
-				obstacleRadius,
-				prediction_1
-			);
-			let collisionPoint_2 = this.getCollision(
-				obstaclePosition,
-				obstacleRadius,
-				prediction_3
-			);
-
-			if (collisionPoint != null) {
-				let distance = collisionPoint.distanceTo(this.location);
-				if (distance < nearestCollisionDistance) {
-					nearestCollisionPoint = collisionPoint;
-					nearestCollisionDistance = distance;
-				}
-				let normal = VectorUtil.sub(collisionPoint, obstaclePosition);
-				// I chose 5 as the distance of how
-				// far away to seek from the obstacle edge
-				normal.setLength(30);
-				// Where to seek to avoid colliding
-				let target = VectorUtil.add(collisionPoint, normal);
-				steer = this.seek(target);
-				total.add(steer);
-			}
-			if (collisionPoint_1 != null) {
-				let distance = collisionPoint.distanceTo(this.location);
-				if (distance < nearestCollisionDistance) {
-					nearestCollisionPoint = collisionPoint;
-					nearestCollisionDistance = distance;
-				}
-
-				let normal = VectorUtil.sub(collisionPoint_1, obstaclePosition);
-				normal.setLength(30);
-				let target = VectorUtil.add(collisionPoint_1, normal);
-				steer = this.seek(target);
-				total.add(steer);
-			}
-			if (collisionPoint_2 != null) {
-				let distance = collisionPoint.distanceTo(this.location);
-				if (distance < nearestCollisionDistance) {
-					nearestCollisionPoint = collisionPoint;
-					nearestCollisionDistance = distance;
-				}
-
-				let normal = VectorUtil.sub(collisionPoint_2, obstaclePosition);
-				// I chose 5 as the distance of how
-				// far away to seek from the obstacle edge
-				normal.setLength(30);
-				// Where to seek to avoid colliding
-				let target = VectorUtil.add(collisionPoint_2, normal);
-				steer = this.seek(target);
-				total.add(steer);
-			}
+			// Optionally, you can fine-tune the avoidance force here, for example by considering the distance to the obstacle
 		}
 
-		// This method is for debugging!
-		// You can use it to draw your rays
-		// and check for collisions
-		let hit = total.length() !== 0;
-		this.debugLine(this.location, prediction, prediction_1, prediction_3, hit);
-		if (nearestCollisionPoint) {
-			return total;
-		}
-
-		// Returns the steering force
-		return total;
-	}
-
-	getCollision(obstaclePosition, obstacleRadius, prediction) {
-		// If the character itself is colliding with the obstacle
-		if (
-			CollisionDetector.circlePoint(
-				this.location,
-				obstaclePosition,
-				obstacleRadius
-			)
-		) {
-			// The collision point is the difference between the
-			// characters location and the obstacle's center
-			// set at a length of the obstacle's radius
-			let collisionPoint = VectorUtil.sub(this.location, obstaclePosition);
-			collisionPoint.setLength(obstacleRadius);
-			collisionPoint.add(obstaclePosition);
-			return collisionPoint;
-		}
-		// Get the vector between obstacle position and current location
-		let vectorA = VectorUtil.sub(obstaclePosition, this.location);
-		// Get the vector between prediction and current location
-		let vectorB = VectorUtil.sub(prediction, this.location);
-
-		// find the vector projection
-		// this method projects vectorProjection (vectorA) onto vectorB
-		// and sets vectorProjection to the its result
-		let vectorProjection = VectorUtil.projectOnVector(vectorA, vectorB);
-		vectorProjection.add(this.location);
-
-		// get the adjacent using trigonometry
-		let opp = obstaclePosition.distanceTo(vectorProjection);
-		let adj = Math.sqrt(obstacleRadius * obstacleRadius - opp * opp);
-
-		// use scalar projection to get the collision length
-		let scalarProjection = vectorProjection.distanceTo(this.location);
-		let collisionLength = scalarProjection - adj;
-
-		// find the collision point by setting
-		// vectorB to the collision length
-		// then adding the current location
-		let collisionPoint = VectorUtil.setLength(vectorB, collisionLength);
-		collisionPoint.add(this.location);
-
-		// Tests to see if the collision point is
-		// 1) on the line and 2) within the obstacle
-		if (
-			CollisionDetector.linePoint(this.location, prediction, collisionPoint) &&
-			CollisionDetector.circlePoint(
-				collisionPoint,
-				obstaclePosition,
-				obstacleRadius
-			)
-		) {
-			return collisionPoint;
-		}
-		// Return null if there is no collision
-		return null;
-	}
-
-	debugLine(v1, v2, w1, w2, hit) {
-		if (this.ray !== null) {
-			this.scene.remove(this.ray);
-			this.scene.remove(this.ray1);
-			this.scene.remove(this.ray2);
-		}
-
-		let points = [];
-
-		points.push(v1);
-		points.push(v2);
-
-		// Creates the central ray
-		let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-		let geometry = new THREE.BufferGeometry().setFromPoints(points);
-		this.ray = new THREE.Line(geometry, material);
-		this.scene.add(this.ray);
-
-		if (w1 != null) {
-			points = [];
-			points.push(v1);
-			points.push(w1);
-
-			// Creates the whisker1 ray
-
-			geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-			this.ray1 = new THREE.Line(geometry, material);
-			// Adds the ray to the scene
-
-			this.scene.add(this.ray1);
-		}
-
-		if (w2 != null) {
-			points = [];
-
-			points.push(v1);
-			points.push(w2);
-
-			// Creates the whisker2 ray
-			geometry = new THREE.BufferGeometry().setFromPoints(points);
-			this.ray2 = new THREE.Line(geometry, material);
-
-			// Adds the ray to the scene
-			this.scene.add(this.ray2);
-		}
-
-		if (hit) {
-			this.gameObject.children[0].material = new THREE.MeshStandardMaterial({
-				color: 0xff0000,
-			});
-		} else {
-			this.gameObject.children[0].material = new THREE.MeshStandardMaterial({
-				color: 0x00ff00,
-			});
-		}
+		return avoidanceForce;
 	}
 
 	applyForce(force) {
@@ -420,8 +220,8 @@ export class Character {
 		this.acceleration.add(force);
 	}
 
-	physics(gameMap) {
-		this.checkEdges(gameMap);
+	physics() {
+		this.checkEdges(this.gameMap);
 		// friction
 		let friction = this.velocity.clone();
 		friction.y = 0;
@@ -446,8 +246,8 @@ export class Character {
 		return steer;
 	}
 
-	getCurrentTile(gameMap) {
-		return gameMap.quantize(this.location);
+	getCurrentTile() {
+		return this.gameMap.quantize(this.location);
 	}
 
 	respawnAtRandomLocation() {

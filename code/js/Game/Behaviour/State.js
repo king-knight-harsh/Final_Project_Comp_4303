@@ -37,7 +37,7 @@ export class CheckForCapture extends State {
 		if (
 			tom &&
 			dog.location.distanceTo(tom.location) < 1 &&
-			!dog.isPowerActivated
+			!tom.isPowerActivated
 		) {
 			console.log("spike has captured tom");
 			scene.remove(tom.gameObject);

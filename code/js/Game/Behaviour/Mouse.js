@@ -12,10 +12,11 @@ export class Mouse extends Character {
 		this.tom = tom;
 		this.state = new AvoidTom();
 		this.state.enterState(this);
+		this.isPowerActivated = false;
 	}
 
-	update(deltaTime, gameMap) {
-		super.update(deltaTime, gameMap);
+	update(deltaTime) {
+		super.update(deltaTime);
 		this.state.updateState(this);
 	}
 
@@ -35,26 +36,26 @@ export class Mouse extends Character {
 			.normalize();
 	}
 
-	attemptEscape(gameMap, direction, player) {
+	attemptEscape(direction, player) {
 		let safeRadius = 6;
 		let escapeTargetPosition = new THREE.Vector3().addVectors(
 			this.location,
 			direction.multiplyScalar(safeRadius)
 		);
-		let escapeTargetTile = gameMap.quantize(escapeTargetPosition);
+		let escapeTargetTile = this.gameMap.quantize(escapeTargetPosition);
 
-		if (escapeTargetTile && gameMap.isTileWalkable(escapeTargetTile)) {
+		if (escapeTargetTile && this.gameMap.isTileWalkable(escapeTargetTile)) {
 			this.path = this.pathFinding.aStar(
-				this.getCurrentTile(gameMap),
+				this.getCurrentTile(),
 				escapeTargetTile
 			);
 			this.currentTargetIndex = 0;
 		} else {
-			this.chooseRandomDirection(gameMap, safeRadius, player);
+			this.chooseRandomDirection(safeRadius, player);
 		}
 	}
 
-	chooseRandomDirection(gameMap, safeRadius, player) {
+	chooseRandomDirection(safeRadius, player) {
 		let maxAttempts = 20;
 		let found = false;
 		let furthestDistance = 0;
@@ -73,10 +74,12 @@ export class Mouse extends Character {
 			let distanceFromTom = potentialTargetPosition.distanceTo(player.location);
 
 			if (distanceFromTom > furthestDistance) {
-				let potentialTargetTile = gameMap.quantize(potentialTargetPosition);
+				let potentialTargetTile = this.gameMap.quantize(
+					potentialTargetPosition
+				);
 				if (
 					potentialTargetTile &&
-					gameMap.isTileWalkable(potentialTargetTile)
+					this.gameMap.isTileWalkable(potentialTargetTile)
 				) {
 					furthestDistance = distanceFromTom;
 					bestTargetTile = potentialTargetTile;
@@ -86,24 +89,21 @@ export class Mouse extends Character {
 		}
 
 		if (found && bestTargetTile) {
-			this.path = this.pathFinding.aStar(
-				this.getCurrentTile(gameMap),
-				bestTargetTile
-			);
+			this.path = this.pathFinding.aStar(this.getCurrentTile(), bestTargetTile);
 			this.currentTargetIndex = 0;
 		} else {
 			console.warn(
 				"Jerry couldn't find a safer path away from Tom. Trying any movement."
 			);
 			// As a last resort, try moving to any adjacent walkable tile.
-			this.moveAny(gameMap, player);
+			this.moveAny(player);
 		}
 	}
 
-	moveAny(gameMap, player) {
+	moveAny(player) {
 		let bestDistance = 0;
 		let bestTile = null;
-		let currentTile = this.getCurrentTile(gameMap);
+		let currentTile = this.getCurrentTile();
 
 		// Scan in a wider range around Jerry for a potential move
 		for (let dx = -1; dx <= 1; dx++) {
@@ -112,9 +112,9 @@ export class Mouse extends Character {
 
 				let checkX = currentTile.x + dx;
 				let checkZ = currentTile.z + dz;
-				let potentialTile = gameMap.graph.getNode(checkX, checkZ);
-				if (potentialTile && gameMap.isTileWalkable(potentialTile)) {
-					let potentialPosition = gameMap.localize(potentialTile);
+				let potentialTile = this.gameMap.graph.getNode(checkX, checkZ);
+				if (potentialTile && this.gameMap.isTileWalkable(potentialTile)) {
+					let potentialPosition = this.gameMap.localize(potentialTile);
 					let distanceFromTom = potentialPosition.distanceTo(player.location);
 					if (distanceFromTom > bestDistance) {
 						bestDistance = distanceFromTom;
@@ -169,10 +169,9 @@ export class Mouse extends Character {
 export class AvoidTom extends State {
 	enterState(character) {
 		// First, check if the character is on a power-up tile
-		const currentTile = character.gameMap.getCurrentTile(character.location);
-		const powerUpTile = character.gameMap.getNode(
-			character.gameMap.getPowerUpTileLocation().x,
-			character.gameMap.getPowerUpTileLocation().z
+		const currentTile = character.getCurrentTile(character.location);
+		const powerUpTile = character.gameMap.quantize(
+			character.gameMap.getPowerUpTileLocation()
 		);
 
 		// If the character is on the power-up tile, switch to the PowerUP state
@@ -181,7 +180,7 @@ export class AvoidTom extends State {
 			powerUpTile &&
 			currentTile.x === powerUpTile.x &&
 			currentTile.z === powerUpTile.z &&
-			!character.isPowerActivated
+			!character.gameMap.isPowerUPTileActive()
 		) {
 			character.state = new MousePowerUp();
 			return;
@@ -191,23 +190,19 @@ export class AvoidTom extends State {
 			// Check if the character is moving towards Tom and attempt to escape
 			if (character.isMovingTowards(character.tom)) {
 				let escapeDirection = character.calculateEscapeDirection(character.tom);
-				character.attemptEscape(
-					character.gameMap,
-					escapeDirection,
-					character.tom
-				);
+				character.attemptEscape(escapeDirection, character.tom);
 			} else {
 				// If not moving towards Tom, choose a random direction to move
-				character.chooseRandomDirection(character.gameMap, 20, character.tom);
+				character.chooseRandomDirection(20, character.tom);
 			}
 		}
 
 		// Follow the existing path or move randomly if no path available
 		if (character.path && character.path.length > 0) {
-			character.followPath(character.gameMap);
+			character.followPath();
 		} else {
 			// If there's no path, try moving in any direction
-			character.moveAny(character.gameMap, character.tom);
+			character.moveAny(character.tom);
 		}
 	}
 

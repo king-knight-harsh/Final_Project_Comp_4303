@@ -34,14 +34,14 @@ export class GameMap {
 
 	init(scene, numberOfObstacles) {
 		this.scene = scene;
-		this.graph.initGraph(numberOfObstacles, this.obstacles);
-		this.powerUpTile = this.graph.powerUpTile;
-		this.highlight(this.powerUpTile, 0xffff00);
+		this.graph.initGraph(numberOfObstacles);
 		this.gameObject = this.mapRenderer.createRendering(this.graph.nodes, scene);
+		this.obstacles = this.mapRenderer.ObstacleList;
+		this.powerUpTile = this.mapRenderer.powerUpTile;
 	}
 
 	getPowerUpTileLocation() {
-		return this.powerUpTile;
+		return this.powerUpTile.position;
 	}
 
 	// Method to get location from a node
@@ -90,32 +90,25 @@ export class GameMap {
 		return this.obstacles;
 	}
 
-	/**
-	 * The method to find the current tile
-	 * @param {THREE.Vector3} location - The location vector of the bot
-	 */
-	getCurrentTile(location) {
-		const x = Math.floor((location.x - this.start.x) / this.tileSize);
-		const z = Math.floor((location.z - this.start.z) / this.tileSize);
-		return this.getNode(x, z);
-	}
-
 	isTileWalkable(node) {
 		// Check if the node exists and is not an obstacle
 		return node && !node.isObstacle();
 	}
 
 	activatePowerUPTile() {
-		this.powerUpTile.type = TileNode.Type.PowerUpActivated;
-		this.highlight(this.powerUpTile, 0x00ff00);
+		let powerUpTile = this.quantize(this.getPowerUpTileLocation());
+		powerUpTile.type = TileNode.Type.PowerUpActivated;
+		this.powerUpTile.material.color.setHex(0x00ff00);
 	}
 
 	resetPowerUPTile() {
-		this.powerUpTile.type = TileNode.Type.PowerUp;
-		this.highlight(this.powerUpTile, 0xffff00);
+		let powerUpTile = this.quantize(this.getPowerUpTileLocation());
+		powerUpTile.type = TileNode.Type.PowerUp;
+		this.powerUpTile.material.color.setHex(0xffff00);
 	}
 
 	isPowerUPTileActive() {
-		return this.powerUpTile.type === TileNode.Type.PowerUpActivated;
+		let powerUpTile = this.quantize(this.getPowerUpTileLocation());
+		return powerUpTile.type === TileNode.Type.PowerUpActivated;
 	}
 }

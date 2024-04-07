@@ -13,7 +13,8 @@ export class Tom extends Character {
 
 		// Add properties to track movement
 		this.previousPosition = new THREE.Vector3();
-		this.significantMoveThreshold = 10; // Define what you consider a "significant move"
+		this.significantMoveThreshold = 10;
+		this.isPowerActivated = false;
 	}
 
 	switchState(state) {
@@ -21,25 +22,26 @@ export class Tom extends Character {
 		this.state.enterState(this);
 	}
 
-	update(deltaTime, gameMap, controller) {
+	update(deltaTime, controller) {
 		// Check for landing on a PowerUp tile
-		const currentTile = this.getCurrentTile(gameMap);
-		const powerUpTileLocation = gameMap.getPowerUpTileLocation();
+		const currentTile = this.getCurrentTile();
+		const powerUpTileLocation = this.gameMap.quantize(
+			this.gameMap.getPowerUpTileLocation()
+		);
 		if (
 			powerUpTileLocation &&
 			currentTile.x === powerUpTileLocation.x &&
-			currentTile.z === powerUpTileLocation.z &&
-			!this.isPowerActivated
+			currentTile.z === powerUpTileLocation.z
 		) {
 			this.state = new CatPowerUp();
 		}
 
-		super.update(deltaTime, gameMap);
+		super.update(deltaTime, this.gameMap);
 		this.state.updateState(this, controller);
 	}
 
-	getCurrentTile(gameMap) {
-		return gameMap.quantize(this.location);
+	getCurrentTile() {
+		return this.gameMap.quantize(this.location);
 	}
 
 	setSpeed(topSpeed) {
@@ -80,8 +82,9 @@ export class MovingState extends State {
 
 export class CatPowerUp extends State {
 	enterState(character) {
+		console.log("Cat PowerUp activated");
 		character.setSpeed(10);
-		character.gameMap.activatePowerUPTile();
+		character.this.gameMap.activatePowerUPTile();
 		character.isPowerActivated = true;
 		setTimeout(() => {
 			character.state = new RemoveCatPowerUp();
@@ -96,7 +99,7 @@ export class CatPowerUp extends State {
 export class RemoveCatPowerUp extends State {
 	enterState(character) {
 		character.setSpeed(5);
-		character.gameMap.resetPowerUPTile();
+		character.this.gameMap.resetPowerUPTile();
 		character.state = new IdleState(character);
 		character.isPowerActivated = false;
 	}

@@ -9,12 +9,10 @@ export class Graph {
 		this.tileSize = tileSize;
 		this.cols = cols;
 		this.rows = rows;
-		this.obstacles = [];
-		this.powerUpTile = null;
 		this.haltonSequence = new HaltonSequence();
 	}
 
-	initGraph(numberOfObstacles, obstaclesList) {
+	initGraph(numberOfObstacles) {
 		this.nodes = [];
 		for (let j = 0; j < this.rows; j++) {
 			for (let i = 0; i < this.cols; i++) {
@@ -24,12 +22,12 @@ export class Graph {
 			}
 		}
 
-		this.placeObstacles(numberOfObstacles, obstaclesList);
+		this.placeObstacles(numberOfObstacles);
 		this.placePowerUp();
 		this.establishConnections();
 	}
 
-	placeObstacles(numberOfObstacles, obstaclesList) {
+	placeObstacles(numberOfObstacles) {
 		let placed = 0;
 		let index = 1; // Halton sequence starts at index 1
 		while (placed < numberOfObstacles) {
@@ -49,7 +47,7 @@ export class Graph {
 				!this.nodes[nodeIndex].isObstacle()
 			) {
 				this.nodes[nodeIndex].type = TileNode.Type.Obstacle;
-				obstaclesList.push(this.nodes[nodeIndex]);
+
 				placed++;
 			}
 		}
@@ -61,7 +59,7 @@ export class Graph {
 			let index = Math.floor(Math.random() * this.nodes.length);
 			if (!this.nodes[index].isObstacle()) {
 				this.nodes[index].type = TileNode.Type.PowerUp;
-				this.powerUpTile = this.nodes[index];
+
 				placed = true;
 			}
 		}

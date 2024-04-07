@@ -6,11 +6,12 @@ import { PathFinding } from "../../Util/PathFinding.js";
 export class Dog extends Character {
 	constructor(color, gameMap, tom) {
 		super(color, gameMap);
-		this.topSpeed = 4;
+		this.topSpeed = 0.4;
 		this.pathFinding = new PathFinding(gameMap);
 		this.state = new GoToPowerUP();
 		this.state.enterState(this);
 		this.tom = tom;
+		this.isPowerActivated = false;
 	}
 
 	/**
@@ -30,12 +31,6 @@ export class Dog extends Character {
 		// Call the base class update (Character's update logic)
 		super.update(deltaTime, this.gameMap);
 
-		// let steer = this.avoidCollision(this.gameMap.getObstacles(), 2);
-
-		// if (steer) {
-		// 	this.applyForce(steer);
-		// }
-
 		// Existing state update logic...
 		this.state.updateState(this);
 	}
@@ -52,12 +47,16 @@ export class Dog extends Character {
 export class GoToPowerUP extends State {
 	enterState(character) {
 		if (character.location !== undefined) {
-			const currentTile = character.gameMap.getCurrentTile(character.location);
-			const powerUpTile = character.gameMap.getNode(
-				character.gameMap.getPowerUpTileLocation().x,
-				character.gameMap.getPowerUpTileLocation().z
+			const currentTile = character.getCurrentTile();
+			const powerUpTile = character.gameMap.quantize(
+				character.gameMap.getPowerUpTileLocation()
 			);
-			if (currentTile !== undefined && powerUpTile !== undefined) {
+			if (
+				currentTile !== undefined &&
+				powerUpTile !== undefined &&
+				powerUpTile &&
+				currentTile
+			) {
 				const targetPosition = character.gameMap.localize(powerUpTile);
 				if (currentTile.x != powerUpTile.x || currentTile.z != powerUpTile.z) {
 					const steer = character.seek(targetPosition);
@@ -65,7 +64,7 @@ export class GoToPowerUP extends State {
 				} else if (
 					currentTile.x === powerUpTile.x &&
 					currentTile.z === powerUpTile.z &&
-					!character.isPowerActivated
+					!character.gameMap.isPowerUPTileActive()
 				) {
 					character.state = new DogPowerUp();
 				}

@@ -134,17 +134,17 @@ function animate() {
 
 	// Update characters
 	if (jerry) {
-		jerry.update(deltaTime, gameMap, tom);
+		jerry.update(deltaTime);
 	}
 
 	jerryFriends.forEach((mouse) => {
 		if (mouse) {
-			mouse.update(deltaTime, gameMap, tom);
+			mouse.update(deltaTime);
 			// Each friend checks for Power-Up tile
 		}
 	});
 	if (tom) {
-		tom.update(deltaTime, gameMap, controller);
+		tom.update(deltaTime, controller);
 	}
 	dog.update(deltaTime);
 

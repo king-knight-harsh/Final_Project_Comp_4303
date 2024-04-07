@@ -11,6 +11,9 @@ export class MapRenderer {
 		this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
 		// Use a map to manage non-terrain tiles
 		this.nonTerrainTiles = new Map();
+
+		this.ObstacleList = [];
+		this.powerUpTile = null;
 	}
 
 	createRendering(graph, scene) {
@@ -66,26 +69,6 @@ export class MapRenderer {
 					return;
 			}
 
-			if (node.type != TileNode.Type.Ground) {
-				let x = node.x * this.tileSize + this.start.x;
-				let y =
-					node.type == TileNode.Type.Obstacle
-						? this.tileSize
-						: this.tileSize / 2;
-				let z = node.z * this.tileSize + this.start.z;
-
-				let geometry = new THREE.BoxGeometry(
-					this.tileSize,
-					this.tileSize,
-					this.tileSize
-				);
-				geometry.translate(x + 0.5 * this.tileSize, y, z + 0.5 * this.tileSize);
-
-				let mesh = new THREE.Mesh(geometry, material);
-				this.nonTerrainTiles.set(node, mesh);
-				scene.add(mesh);
-			}
-
 			let x = node.x * this.tileSize + this.start.x;
 			let y = this.tileSize / 2;
 			let z = node.z * this.tileSize + this.start.z;
@@ -95,10 +78,19 @@ export class MapRenderer {
 				this.tileSize,
 				this.tileSize
 			);
-			geometry.translate(x + 0.5 * this.tileSize, y, z + 0.5 * this.tileSize);
 
 			let mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(
+				x + this.tileSize / 2,
+				y + this.tileSize / 2,
+				z + this.tileSize / 2
+			);
+
+			if (node.type === TileNode.Type.PowerUp) {
+				this.powerUpTile = mesh;
+			}
 			this.nonTerrainTiles.set(node, mesh);
+			this.ObstacleList.push(mesh);
 			scene.add(mesh);
 		}
 	}
