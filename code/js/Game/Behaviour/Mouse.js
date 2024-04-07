@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { Character } from "./Character.js";
 import { State } from "./State.js";
-
+import { PathFinding } from "../../Util/PathFinding.js";
 export class Mouse extends Character {
 	constructor(mColor, gameMap, tom) {
 		super(mColor, gameMap);
+		this.pathFinding = new PathFinding(gameMap);
 		this.path = [];
 		this.currentTargetIndex = 0;
 		this.topSpeed = 10;
@@ -43,7 +44,10 @@ export class Mouse extends Character {
 		let escapeTargetTile = gameMap.quantize(escapeTargetPosition);
 
 		if (escapeTargetTile && gameMap.isTileWalkable(escapeTargetTile)) {
-			this.path = gameMap.aStar(this.getCurrentTile(gameMap), escapeTargetTile);
+			this.path = this.pathFinding.aStar(
+				this.getCurrentTile(gameMap),
+				escapeTargetTile
+			);
 			this.currentTargetIndex = 0;
 		} else {
 			this.chooseRandomDirection(gameMap, safeRadius, player);
@@ -82,7 +86,10 @@ export class Mouse extends Character {
 		}
 
 		if (found && bestTargetTile) {
-			this.path = gameMap.aStar(this.getCurrentTile(gameMap), bestTargetTile);
+			this.path = this.pathFinding.aStar(
+				this.getCurrentTile(gameMap),
+				bestTargetTile
+			);
 			this.currentTargetIndex = 0;
 		} else {
 			console.warn(
@@ -118,7 +125,7 @@ export class Mouse extends Character {
 		}
 
 		if (bestTile) {
-			this.path = gameMap.aStar(currentTile, bestTile);
+			this.path = this.pathFinding.aStar(currentTile, bestTile);
 			this.currentTargetIndex = 0;
 		} else {
 			console.warn("Jerry is trapped and cannot move to any adjacent tile.");

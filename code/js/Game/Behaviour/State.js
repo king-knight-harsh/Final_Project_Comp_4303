@@ -19,7 +19,7 @@ export class State {
 export class CheckForCapture extends State {
 	enterState(jerry, tom, jerryFriends, dog, scene) {
 		// Check if Jerry has been captured
-		if (jerry && tom && tom.location.distanceTo(jerry.location) < 1.5) {
+		if (jerry && tom && tom.location.distanceTo(jerry.location) < 1) {
 			console.log("Tom has caught Jerry!");
 			scene.remove(jerry.gameObject);
 			jerry = null;
@@ -27,7 +27,7 @@ export class CheckForCapture extends State {
 		// Filter Jerry's friends to remove any that Tom catches
 		jerryFriends = jerryFriends.filter((friend) => {
 			// Ensure tom is not null before accessing its location
-			if (tom && tom.location.distanceTo(friend.location) < 1.5) {
+			if (tom && tom.location.distanceTo(friend.location) < 1) {
 				console.log("Tom has caught a friend!");
 				scene.remove(friend.gameObject);
 				return false;
@@ -36,7 +36,7 @@ export class CheckForCapture extends State {
 		});
 		if (
 			tom &&
-			dog.location.distanceTo(tom.location) < 1.5 &&
+			dog.location.distanceTo(tom.location) < 1 &&
 			!dog.isPowerActivated
 		) {
 			console.log("spike has captured tom");
