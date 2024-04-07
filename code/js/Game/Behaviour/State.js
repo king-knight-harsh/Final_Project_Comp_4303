@@ -25,15 +25,14 @@ export class CheckForCapture extends State {
 			jerry = null;
 		}
 		// Filter Jerry's friends to remove any that Tom catches
-		jerryFriends = jerryFriends.filter((friend) => {
-			// Ensure tom is not null before accessing its location
+		jerryFriends.forEach((friend, index) => {
 			if (tom && tom.location.distanceTo(friend.location) < 1) {
 				console.log("Tom has caught a friend!");
 				scene.remove(friend.gameObject);
-				return false;
+				jerryFriends.splice(index, 1); // Remove the friend from the array
 			}
-			return true;
 		});
+
 		if (
 			tom &&
 			dog.location.distanceTo(tom.location) < 1 &&
@@ -43,6 +42,8 @@ export class CheckForCapture extends State {
 			scene.remove(tom.gameObject);
 			tom = null;
 		}
+		console.log(jerryFriends.length);
+		console.log(jerry);
 		// Modify the reset state check to not rely on tom's existence
 		if ((!jerry && jerryFriends.length === 0) || tom === null) {
 			let checkForResetState = new CheckForResetState();

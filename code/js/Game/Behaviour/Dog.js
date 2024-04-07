@@ -6,7 +6,7 @@ import { PathFinding } from "../../Util/PathFinding.js";
 export class Dog extends Character {
 	constructor(color, gameMap, tom) {
 		super(color, gameMap);
-		this.topSpeed = 0.4;
+		this.topSpeed = 4;
 		this.pathFinding = new PathFinding(gameMap);
 		this.state = new GoToPowerUP();
 		this.state.enterState(this);

@@ -15,6 +15,7 @@ export class Tom extends Character {
 		this.previousPosition = new THREE.Vector3();
 		this.significantMoveThreshold = 10;
 		this.isPowerActivated = false;
+		this.topSpeed = 5;
 	}
 
 	switchState(state) {
@@ -24,16 +25,21 @@ export class Tom extends Character {
 
 	update(deltaTime, controller) {
 		// Check for landing on a PowerUp tile
-		const currentTile = this.getCurrentTile();
+		const currentTile = this.getCurrentTile(this.gameMap);
 		const powerUpTileLocation = this.gameMap.quantize(
 			this.gameMap.getPowerUpTileLocation()
 		);
+
 		if (
 			powerUpTileLocation &&
 			currentTile.x === powerUpTileLocation.x &&
-			currentTile.z === powerUpTileLocation.z
+			currentTile.z === powerUpTileLocation.z &&
+			!this.gameMap.isPowerUPTileActive()
 		) {
-			this.state = new CatPowerUp();
+			this.powerUP();
+			setTimeout(() => {
+				this.removePowerUp();
+			}, 6000);
 		}
 
 		super.update(deltaTime, this.gameMap);
@@ -50,6 +56,20 @@ export class Tom extends Character {
 
 	movedSignificantly() {
 		return this.hasMovedSignificantly;
+	}
+
+	powerUP() {
+		this.isPowerActivated = true;
+		console.log("Cat PowerUp activated");
+		this.setSpeed(10);
+		this.gameMap.activatePowerUPTile();
+	}
+
+	removePowerUp() {
+		this.isPowerActivated = false;
+		console.log("Cat PowerUp deactivated");
+		this.setSpeed(5);
+		this.gameMap.resetPowerUPTile();
 	}
 }
 
@@ -77,34 +97,5 @@ export class MovingState extends State {
 			force.setLength(50);
 			player.applyForce(force);
 		}
-	}
-}
-
-export class CatPowerUp extends State {
-	enterState(character) {
-		console.log("Cat PowerUp activated");
-		character.setSpeed(10);
-		character.this.gameMap.activatePowerUPTile();
-		character.isPowerActivated = true;
-		setTimeout(() => {
-			character.state = new RemoveCatPowerUp();
-		}, 6000);
-	}
-
-	updateState(character) {
-		this.enterState(character);
-	}
-}
-
-export class RemoveCatPowerUp extends State {
-	enterState(character) {
-		character.setSpeed(5);
-		character.this.gameMap.resetPowerUPTile();
-		character.state = new IdleState(character);
-		character.isPowerActivated = false;
-	}
-
-	updateState(character) {
-		this.enterState(character);
 	}
 }
