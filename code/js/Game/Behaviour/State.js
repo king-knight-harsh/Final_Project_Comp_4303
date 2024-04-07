@@ -42,8 +42,6 @@ export class CheckForCapture extends State {
 			scene.remove(tom.gameObject);
 			tom = null;
 		}
-		console.log(jerryFriends.length);
-		console.log(jerry);
 		// Modify the reset state check to not rely on tom's existence
 		if ((!jerry && jerryFriends.length === 0) || tom === null) {
 			let checkForResetState = new CheckForResetState();
