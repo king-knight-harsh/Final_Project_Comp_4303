@@ -1,6 +1,5 @@
 export function initializeCharacters(
 	gameMap,
-	jerry,
 	tom,
 	dog,
 	jerryFriends,
@@ -12,12 +11,10 @@ export function initializeCharacters(
 	let startNPC = gameMap.graph.getRandomEmptyTile();
 	let startPlayer = gameMap.graph.getRandomEmptyTile();
 	let dogPlayer = gameMap.graph.getRandomEmptyTile();
-	// Set initial locations
-	jerry.location = gameMap.localize(startNPC);
+
 	tom.location = gameMap.localize(startPlayer);
 	dog.location = gameMap.localize(dogPlayer);
 
-	scene.add(jerry.gameObject);
 	scene.add(tom.gameObject);
 	scene.add(dog.gameObject);
 

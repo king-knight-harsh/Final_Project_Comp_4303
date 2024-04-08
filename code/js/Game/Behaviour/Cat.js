@@ -58,11 +58,11 @@ export class Tom extends Character {
 		return this.hasMovedSignificantly;
 	}
 
-	powerUP() {
-		this.isPowerActivated = true;
+	async powerUP() {
 		console.log("Cat PowerUp activated");
-		this.setSpeed(10);
-		this.gameMap.activatePowerUPTile();
+		await this.gameMap.activatePowerUPTile();
+		this.isPowerActivated = true;
+		await this.setSpeed(10);
 	}
 
 	removePowerUp() {

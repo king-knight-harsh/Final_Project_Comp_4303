@@ -34,30 +34,16 @@ orbitControls.update(); // Initial update
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
 
-let tomCamera, jerryCamera;
+let tomCamera;
 let activeCamera = mapCamera;
 let controller;
 
 // Characters
 
-let dog, jerry, tom;
+let dog, tom;
 let jerryFriends = []; // Assuming initialization of Jerry's friends happens later
 
 const resources = new Resources(resourceFiles);
-
-// Update camera reference in the controller based on interactions or game events
-document.addEventListener("keydown", (event) => {
-	if (event.key === "c" || event.key === "C") {
-		activeCamera =
-			activeCamera === tomCamera
-				? jerryCamera
-				: activeCamera === jerryCamera
-				? mapCamera
-				: tomCamera;
-
-		controller.setCamera(activeCamera);
-	}
-});
 
 // Setup our scene
 async function setup() {
@@ -74,18 +60,8 @@ async function setup() {
 
 	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
-	jerry = new Mouse(new THREE.Color(0x000000), gameMap, tom);
-
 	// Camera setup
-	setupCameras(
-		mapCamera,
-		tomCamera,
-		jerryCamera,
-		activeCamera,
-		tom,
-		jerry,
-		scene
-	);
+	setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
 
 	controller = new Controller(document, activeCamera);
 
@@ -94,7 +70,6 @@ async function setup() {
 
 	initializeCharacters(
 		gameMap,
-		jerry,
 		tom,
 		dog,
 		jerryFriends,
@@ -110,18 +85,19 @@ async function setup() {
 async function setupModels() {
 	await resources.loadAll().then(() => {
 		dog.setModel(resources.get("spike"));
-		jerry.setModel(resources.get("jerry"));
-		// Scale Jerry down
-		jerry.gameObject.scale.set(0.5, 0.5, 0.5);
 		dog.gameObject.scale.set(1, 1, 1);
 		tom.setModel(resources.get("tom"));
 
 		// Initialize additional mice
-		for (let i = 1; i <= 3; i++) {
+		for (let i = 0; i <= 3; i++) {
 			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
-			jerryFriend.setModel(resources.get(`jerryFriend${i}`));
-			// Scale Jerry's friends up
-			jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
+			if (i === 0) {
+				jerryFriend.setModel(resources.get("jerry"));
+				jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
+			} else {
+				jerryFriend.setModel(resources.get(`jerryFriend${i}`));
+				jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
+			}
 			jerryFriends.push(jerryFriend);
 		}
 	});
@@ -130,12 +106,6 @@ async function setupModels() {
 function animate() {
 	requestAnimationFrame(animate);
 	let deltaTime = clock.getDelta();
-	if (controller) controller.setWorldDirection();
-
-	// Update characters
-	if (jerry) {
-		jerry.update(deltaTime);
-	}
 
 	jerryFriends.forEach((mouse) => {
 		if (mouse) {
@@ -148,7 +118,9 @@ function animate() {
 	}
 	dog.update(deltaTime);
 
-	checkForCaptureState.enterState(jerry, tom, jerryFriends, dog, scene);
+	if (controller) controller.setWorldDirection();
+
+	checkForCaptureState.enterState(tom, jerryFriends, dog, scene);
 
 	orbitControls.update();
 

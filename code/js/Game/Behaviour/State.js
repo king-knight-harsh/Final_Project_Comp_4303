@@ -17,17 +17,15 @@ export class State {
 }
 
 export class CheckForCapture extends State {
-	enterState(jerry, tom, jerryFriends, dog, scene) {
-		// Check if Jerry has been captured
-		if (jerry && tom && tom.location.distanceTo(jerry.location) < 1) {
-			console.log("Tom has caught Jerry!");
-			scene.remove(jerry.gameObject);
-			jerry = null;
-		}
+	enterState(tom, jerryFriends, dog, scene) {
 		// Filter Jerry's friends to remove any that Tom catches
 		jerryFriends.forEach((friend, index) => {
 			if (tom && tom.location.distanceTo(friend.location) < 1) {
-				console.log("Tom has caught a friend!");
+				if (index === 0) {
+					console.log("Tom has caught a jerry!");
+				} else {
+					console.log("Tom has caught a friend!");
+				}
 				scene.remove(friend.gameObject);
 				jerryFriends.splice(index, 1); // Remove the friend from the array
 			}
@@ -38,26 +36,26 @@ export class CheckForCapture extends State {
 			dog.location.distanceTo(tom.location) < 1 &&
 			!tom.isPowerActivated
 		) {
-			console.log("spike has captured tom");
+			console.log("Spike has captured tom");
 			scene.remove(tom.gameObject);
 			tom = null;
 		}
 		// Modify the reset state check to not rely on tom's existence
-		if ((!jerry && jerryFriends.length === 0) || tom === null) {
+		if (jerryFriends.length === 0 || tom === null) {
 			let checkForResetState = new CheckForResetState();
 			// You might need to adjust the CheckForResetState class to handle tom being null
-			checkForResetState.enterState(jerry, jerryFriends, tom);
+			checkForResetState.enterState(jerryFriends, tom);
 		}
 	}
 
-	updateState(jerry, tom, jerryFriends, dog, scene) {
-		this.enterState(jerry, tom, jerryFriends, dog, scene);
+	updateState(tom, jerryFriends, dog, scene) {
+		this.enterState(tom, jerryFriends, dog, scene);
 	}
 }
 export class CheckForResetState extends State {
-	enterState(jerry, jerryFriends, tom) {
+	enterState(jerryFriends, tom) {
 		// The logic previously in checkForReset
-		if ((!jerry && jerryFriends.length === 0) || !tom) {
+		if (jerryFriends.length === 0 || !tom) {
 			const modalHTML = `
             <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -95,7 +93,7 @@ export class CheckForResetState extends State {
 		}
 	}
 
-	updateState(jerry, tom, jerryFriends) {
-		this.enterState(jerry, tom, jerryFriends);
+	updateState(tom, jerryFriends) {
+		this.enterState(tom, jerryFriends);
 	}
 }

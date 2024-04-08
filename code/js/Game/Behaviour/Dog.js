@@ -6,21 +6,12 @@ import { PathFinding } from "../../Util/PathFinding.js";
 export class Dog extends Character {
 	constructor(color, gameMap, tom) {
 		super(color, gameMap);
-		this.topSpeed = 4;
+		this.topSpeed = 0.3;
 		this.pathFinding = new PathFinding(gameMap);
 		this.state = new GoToPowerUP();
 		this.state.enterState(this);
 		this.tom = tom;
 		this.isPowerActivated = false;
-	}
-
-	/**
-	 * Method to switch the state
-	 * @param {State} state - The state to switch to
-	 */
-	switchState(state) {
-		this.state = state;
-		this.state.enterState(this); // Pass gameMap when entering the new state
 	}
 
 	/**
@@ -57,16 +48,25 @@ export class GoToPowerUP extends State {
 				powerUpTile &&
 				currentTile
 			) {
-				const targetPosition = character.gameMap.localize(powerUpTile);
-				if (currentTile.x != powerUpTile.x || currentTile.z != powerUpTile.z) {
-					const steer = character.seek(targetPosition);
-					character.applyForce(steer);
-				} else if (
+				let path = character.pathFinding.aStar(
+					character.gameMap.quantize(character.location),
+					powerUpTile
+				);
+				if (
 					currentTile.x === powerUpTile.x &&
 					currentTile.z === powerUpTile.z &&
 					!character.gameMap.isPowerUPTileActive()
 				) {
 					character.state = new DogPowerUp();
+				} else if (path && path.length > 1) {
+					// Ensure path[1] exists
+					let targetPosition = character.gameMap.localize(path[1]);
+					if (targetPosition) {
+						let steer = character.seek(targetPosition);
+						character.applyForce(steer);
+					} else {
+						console.error("Invalid target position derived from path.");
+					}
 				}
 			}
 		}
@@ -115,7 +115,7 @@ export class DogPowerUp extends State {
 export class RemoveDogPowerUp extends State {
 	enterState(character) {
 		character.gameMap.resetPowerUPTile();
-		character.setSpeed(4);
+		character.setSpeed(3);
 		character.state = new GoToPowerUP();
 		character.isPowerActivated = false;
 	}

@@ -10,14 +10,22 @@ export class Mouse extends Character {
 		this.currentTargetIndex = 0;
 		this.topSpeed = 10;
 		this.tom = tom;
+		this.isPowerActivated = false;
 		this.state = new AvoidTom();
 		this.state.enterState(this);
-		this.isPowerActivated = false;
 	}
 
 	update(deltaTime) {
-		super.update(deltaTime);
+		// Call the base class update (Character's update logic)
+		super.update(deltaTime, this.gameMap);
+
+		// Existing state update logic...
 		this.state.updateState(this);
+	}
+
+	switchState(state) {
+		this.state = state;
+		this.state.enterState(this);
 	}
 
 	isMovingTowards(player) {
@@ -182,10 +190,8 @@ export class AvoidTom extends State {
 			currentTile.z === powerUpTile.z &&
 			!character.gameMap.isPowerUPTileActive()
 		) {
-			character.state = new MousePowerUp();
-			return;
+			character.switchState(new MousePowerUp());
 		}
-		// Determine if the character needs a new path to avoid Tom
 		if (character.needsNewPath(character.tom)) {
 			// Check if the character is moving towards Tom and attempt to escape
 			if (character.isMovingTowards(character.tom)) {
@@ -204,6 +210,8 @@ export class AvoidTom extends State {
 			// If there's no path, try moving in any direction
 			character.moveAny(character.tom);
 		}
+
+		// Determine if the character needs a new path to avoid Tom
 	}
 
 	updateState(character) {
@@ -213,29 +221,27 @@ export class AvoidTom extends State {
 
 export class MousePowerUp extends State {
 	enterState(character) {
+		console.log("Mouse has activated the power-up!");
 		character.disappear();
 		character.gameMap.activatePowerUPTile();
 		character.isPowerActivated = true;
 		setTimeout(() => {
-			character.state = new RemoveMousePowerUp();
+			character.switchState(new RemoveMousePowerUp());
 		}, 6000);
 	}
 
-	updateState(character) {
-		this.enterState(character);
-	}
+	updateState(character) {}
 }
 
 export class RemoveMousePowerUp extends State {
 	enterState(character) {
-		// character.respawnAtRandomLocation();
+		console.log("Mouse has power-up is exhausted!");
+		character.respawnAtRandomLocation();
 		character.appear();
 		character.gameMap.resetPowerUPTile();
 		character.isPowerActivated = false;
-		character.state = new AvoidTom();
+		character.switchState(new AvoidTom());
 	}
 
-	updateState(character) {
-		this.enterState(character);
-	}
+	updateState(character) {}
 }
