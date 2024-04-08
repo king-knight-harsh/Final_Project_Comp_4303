@@ -252,7 +252,8 @@ export class AvoidTom extends State {
 			powerUpTile &&
 			currentTile.x === powerUpTile.x &&
 			currentTile.z === powerUpTile.z &&
-			!character.gameMap.isPowerUPTileActive()
+			!character.gameMap.isPowerUPTileActive() &&
+			!character.isPowerActivated
 		) {
 			character.switchState(new MousePowerUp());
 		}
@@ -318,7 +319,7 @@ export class RemoveMousePowerUp extends State {
 	 * @param {Mouse} character - The mouse character
 	 */
 	enterState(character) {
-		console.log("Mouse has power-up is exhausted!");
+		console.log("Mouse PowerUp Deactivated!");
 		character.respawnAtRandomLocation();
 		character.appear();
 		character.gameMap.resetPowerUPTile();

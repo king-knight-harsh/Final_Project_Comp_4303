@@ -219,23 +219,86 @@ export class Character {
 	 */
 	avoidCollision(obstacles) {
 		const forwardRayDirection = this.velocity.clone().normalize();
-		const forwardRayLength = 4;
+		const rayLength = 4;
+		const avoidanceForce = new THREE.Vector3();
+		const directions = [];
+
+		// Create rays for four cardinal directions: forward, backward, left, and right
 		const forwardRay = new THREE.Raycaster(
 			this.location,
 			forwardRayDirection,
 			0,
-			forwardRayLength
+			rayLength
 		);
-		const intersects = forwardRay.intersectObjects(obstacles, true);
+		const backwardRayDirection = forwardRayDirection.clone().negate();
+		const backwardRay = new THREE.Raycaster(
+			this.location,
+			backwardRayDirection,
+			0,
+			rayLength
+		);
+		const rightwardDirection = new THREE.Vector3(0, 1, 0)
+			.cross(forwardRayDirection)
+			.normalize();
+		const rightRay = new THREE.Raycaster(
+			this.location,
+			rightwardDirection,
+			0,
+			rayLength
+		);
+		const leftRayDirection = rightwardDirection.clone().negate();
+		const leftRay = new THREE.Raycaster(
+			this.location,
+			leftRayDirection,
+			0,
+			rayLength
+		);
 
-		let avoidanceForce = new THREE.Vector3();
+		// Check all directions for obstacles
+		directions.push({
+			ray: forwardRay,
+			direction: forwardRayDirection,
+			open: true,
+		});
+		directions.push({
+			ray: backwardRay,
+			direction: backwardRayDirection,
+			open: true,
+		});
+		directions.push({
+			ray: rightRay,
+			direction: rightwardDirection,
+			open: true,
+		});
+		directions.push({ ray: leftRay, direction: leftRayDirection, open: true });
 
-		if (intersects.length > 0) {
-			const rightwardDirection = new THREE.Vector3(0, -1, 0)
-				.cross(forwardRayDirection)
-				.normalize();
-			avoidanceForce.copy(rightwardDirection).multiplyScalar(this.topSpeed * 5);
+		// Assess each direction
+		directions.forEach((dir) => {
+			const intersects = dir.ray.intersectObjects(obstacles, true);
+			dir.open = intersects.length === 0; // Mark direction as open if no intersections found
+			dir.distance = intersects.length > 0 ? intersects[0].distance : rayLength; // Store distance to nearest obstacle
+		});
+
+		// Filter for open directions and sort by distance to obstacle (descending)
+		const openDirections = directions
+			.filter((dir) => dir.open)
+			.sort((a, b) => b.distance - a.distance);
+
+		if (openDirections.length > 0) {
+			// If there are open directions, pick the one with the most space
+			avoidanceForce
+				.copy(openDirections[0].direction)
+				.multiplyScalar(this.topSpeed * 3);
+		} else {
+			// If no open directions, pick the direction with the farthest obstacle
+			const farthestObstructedDirection = directions.sort(
+				(a, b) => b.distance - a.distance
+			)[0];
+			avoidanceForce
+				.copy(farthestObstructedDirection.direction)
+				.multiplyScalar(this.topSpeed * 3);
 		}
+
 		return avoidanceForce;
 	}
 

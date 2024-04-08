@@ -44,7 +44,7 @@ export class CheckForCapture extends State {
 
 		if (
 			tom &&
-			dog.location.distanceTo(tom.location) < 1 &&
+			dog.location.distanceTo(tom.location) < 2.5 &&
 			!tom.isPowerActivated
 		) {
 			console.log("Spike has captured Tom");

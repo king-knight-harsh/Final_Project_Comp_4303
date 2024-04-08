@@ -191,8 +191,10 @@ function animate() {
 	}
 	dog.update(deltaTime);
 
-	// Check for capture
-	checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
+	if (tom != null && jerryAndFriends.length > 0) {
+		// Check for capture
+		checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
+	}
 
 	orbitControls.update();
 

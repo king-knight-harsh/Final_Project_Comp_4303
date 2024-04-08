@@ -106,7 +106,8 @@ export class GoToPowerUP extends State {
 					if (
 						currentTile.x === powerUpTile.x &&
 						currentTile.z === powerUpTile.z &&
-						!character.gameMap.isPowerUPTileActive()
+						!character.gameMap.isPowerUPTileActive() &&
+						!character.isPowerActivated
 					) {
 						character.state = new DogPowerUp();
 					} else if (path && path.length > 1) {
