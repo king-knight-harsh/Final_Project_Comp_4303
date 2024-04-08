@@ -14,120 +14,141 @@ import { CheckForCapture } from "./Game/Behaviour/State.js";
 
 // Create Scene
 const scene = new THREE.Scene();
+// Create Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+// Set renderer size
 renderer.setSize(window.innerWidth, window.innerHeight);
+// Add renderer to the body
 document.body.appendChild(renderer.domElement);
+// Check for capture state
 let checkForCaptureState = new CheckForCapture();
 
 // Camera Setup
 const mapCamera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
+	75,
+	window.innerWidth / window.innerHeight,
+	0.1,
+	1000
 );
-mapCamera.position.set(0, 100, 0); // Elevated position to view the whole map
+// Elevated position to view the whole map
+mapCamera.position.set(0, 100, 0);
+// Look at the center of the map
 const orbitControls = new OrbitControls(mapCamera, renderer.domElement);
-orbitControls.update(); // Initial update
+// Initial update
+orbitControls.update();
 
 // Game Components
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
 
+// Camera Variables
 let tomCamera;
 let activeCamera = mapCamera;
+// Controller Variable
 let controller;
 
-// Characters
-
+// Game Characters
 let dog, tom;
+// Array to store all mice
 let jerryAndFriends = [];
 
+// Resource Setup
 const resources = new Resources(resourceFiles);
 
 // Setup our scene
 async function setup() {
-  scene.background = new THREE.Color(0xffffff);
+	// Set background color
+	scene.background = new THREE.Color(0xffffff);
 
-  // Light setup
-  let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-  directionalLight.position.set(50, 100, 50);
-  scene.add(directionalLight);
+	// Light setup
+	let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+	// Set light position
+	directionalLight.position.set(50, 100, 50);
+	// Add light to the scene
+	scene.add(directionalLight);
 
-  gameMap.init(scene, 20);
+	// Initialize game map with 20 obstacles
+	gameMap.init(scene, 20);
+	// Create a new Tom instance
+	tom = new Tom(new THREE.Color(0xff0000), gameMap);
+	// Create a new Dog instance
+	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
-  tom = new Tom(new THREE.Color(0xff0000), gameMap);
+	// Camera setup
+	setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
 
-  dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
+	// Controller setup
+	controller = new Controller(document, activeCamera);
 
-  // Camera setup
-  setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
+	// Model setup
+	await setupModels();
 
-  controller = new Controller(document, activeCamera);
+	// Initialize characters
+	initializeCharacters(
+		gameMap,
+		tom,
+		dog,
+		jerryAndFriends,
+		scene,
+		mapCamera,
+		activeCamera
+	);
 
-  // Model setup
-  await setupModels();
-
-  initializeCharacters(
-    gameMap,
-    tom,
-    dog,
-    jerryAndFriends,
-    scene,
-    mapCamera,
-    activeCamera
-  );
-
-  // Start animation loop
-  animate();
+	// Start animation loop
+	animate();
 }
 
-// Load models asynchronously
+/**
+ * Load all models asynchronously and set them up in the scene.
+ */
 async function setupModels() {
-  await resources.loadAll().then(() => {
-    // Set models for dog and Tom
-    dog.setModel(resources.get("spike"));
-    dog.gameObject.scale.set(1, 1, 1);
-    tom.setModel(resources.get("tom"));
+	await resources.loadAll().then(() => {
+		// Set models for dog and Tom
+		dog.setModel(resources.get("spike"));
+		dog.gameObject.scale.set(1, 1, 1);
+		tom.setModel(resources.get("tom"));
 
-    // Initialize additional mice
-    for (let i = 0; i <= 3; i++) {
-      let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
-      if (i === 0) {
-        jerryFriend.setModel(resources.get("jerry"));
-        jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
-      } else {
-        jerryFriend.setModel(resources.get(`jerryFriend${i}`));
-        jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
-      }
-      jerryAndFriends.push(jerryFriend);
-    }
-  });
+		// Initialize additional mice
+		for (let i = 0; i <= 3; i++) {
+			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
+			if (i === 0) {
+				jerryFriend.setModel(resources.get("jerry"));
+				jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
+			} else {
+				jerryFriend.setModel(resources.get(`jerryFriend${i}`));
+				jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
+			}
+			jerryAndFriends.push(jerryFriend);
+		}
+	});
 }
 
-// Animation loop
+/**
+ * The main animation loop that updates the game state and renders the scene.
+ */
 function animate() {
-  requestAnimationFrame(animate);
-  let deltaTime = clock.getDelta();
+	requestAnimationFrame(animate);
+	let deltaTime = clock.getDelta();
 
-  // Update all characters
-  jerryAndFriends.forEach((mouse) => {
-    if (mouse) {
-      mouse.update(deltaTime);
-      // Each friend checks for Power-Up tile
-    }
-  });
-  if (tom) {
-    tom.update(deltaTime, controller);
-  }
-  dog.update(deltaTime);
+	// Update all characters
+	jerryAndFriends.forEach((mouse) => {
+		if (mouse) {
+			mouse.update(deltaTime);
+			// Each friend checks for Power-Up tile
+		}
+	});
+	if (tom) {
+		tom.update(deltaTime, controller);
+	}
+	dog.update(deltaTime);
 
-  // Check for capture
-  checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
+	// Check for capture
+	checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
 
-  orbitControls.update();
+	orbitControls.update();
 
-  renderer.render(scene, activeCamera); // Use the active camera
+	renderer.render(scene, activeCamera); // Use the active camera
 }
 
+// Start the game
 setup();
