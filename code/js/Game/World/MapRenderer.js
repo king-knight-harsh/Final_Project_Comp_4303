@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { TileNode } from "./TileNode.js";
-
+import { Perlin } from "./Perlin.js";
+import { MathUtil } from "../../Util/MathUtil.js";
 /**
  * Class to render the map
  */
@@ -12,11 +13,13 @@ export class MapRenderer {
 	 * @param {number} tileSize - The size of each tile
 	 * @param {number} cols - The number of columns in the map
 	 */
-	constructor(start, tileSize, cols) {
+	constructor(start, tileSize, cols, rows) {
 		this.start = start;
 		this.tileSize = tileSize;
 		this.cols = cols;
-
+		this.rows = cols;
+		this.perlin = new Perlin(256);
+		this.count = 0;
 		// Geometry for ground tiles
 		this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
 
@@ -39,10 +42,11 @@ export class MapRenderer {
 		for (let node of graph) {
 			this.createGround(node);
 			this.setTile(node, scene);
+			this.count++;
 		}
 
 		// Create the ground mesh
-		let groundMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+		let groundMaterial = new THREE.MeshStandardMaterial({ color: 0xddddd0 });
 		let ground = new THREE.Mesh(this.groundGeometries, groundMaterial);
 		scene.add(ground);
 	}
@@ -55,16 +59,19 @@ export class MapRenderer {
 		let x = node.x * this.tileSize + this.start.x;
 		let y = 0;
 		let z = node.z * this.tileSize + this.start.z;
-
-		let geometry = new THREE.BoxGeometry(
-			this.tileSize,
-			this.tileSize,
-			this.tileSize
-		);
+		let noiseValue = this.perlin.octaveNoise(
+			this.count % this.cols,
+			this.count / this.rows,
+			0.1,
+			4,
+			0.5
+		); // Adjust parameters as needed
+		let height = MathUtil.map(noiseValue, 0, 1, 0, 10);
+		let geometry = new THREE.BoxGeometry(this.tileSize, height, this.tileSize);
 		geometry.translate(
-			x + 0.5 * this.tileSize,
-			y + 0.5 * this.tileSize,
-			z + 0.5 * this.tileSize
+			x + this.tileSize / 2,
+			y + this.tileSize / 2,
+			z + this.tileSize / 2
 		);
 
 		// Merge geometries for efficiency

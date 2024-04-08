@@ -212,6 +212,20 @@ export class Character {
 		this.lastValidLocation.copy(this.location);
 	}
 
+	avoidEdges() {
+		// Logic to prevent character from going out of bounds
+		let margin = 1; // How close the character can get to the edge
+		let minX = this.gameMap.start.x + margin;
+		let maxX = this.gameMap.start.x + this.gameMap.width - margin;
+		let minZ = this.gameMap.start.z + margin;
+		let maxZ = this.gameMap.start.z + this.gameMap.depth - margin;
+
+		if (this.location.x < minX) this.location.x = minX;
+		if (this.location.x > maxX) this.location.x = maxX;
+		if (this.location.z < minZ) this.location.z = minZ;
+		if (this.location.z > maxZ) this.location.z = maxZ;
+	}
+
 	/**
 	 * Method to avoid collision with obstacles
 	 * @param {THREE.Object3D[]} obstacles - Array of obstacle objects
@@ -219,7 +233,7 @@ export class Character {
 	 */
 	avoidCollision(obstacles) {
 		const forwardRayDirection = this.velocity.clone().normalize();
-		const rayLength = 4;
+		const rayLength = 6;
 		const avoidanceForce = new THREE.Vector3();
 		const directions = [];
 

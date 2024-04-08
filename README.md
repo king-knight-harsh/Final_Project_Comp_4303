@@ -4,8 +4,8 @@ Tom's Maze Chase is an exciting game where players take control of Tom, the cat,
 
 ## Team Members
 
-1. [Harsh Sharma](https://github.com/king-knight-harsh)
-2. [Sahil Mahey](https://github.com/SahilMahey)
+1. [Harsh Sharma](https://github.com/king-knight-harsh) - 201961844
+2. [Sahil Mahey](https://github.com/SahilMahey) - 201964327
 
 ## Table of Contents
 
@@ -15,7 +15,6 @@ Tom's Maze Chase is an exciting game where players take control of Tom, the cat,
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Video Demo](#video-demo)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Key Features
@@ -35,26 +34,29 @@ Tom's Maze Chase is an exciting game where players take control of Tom, the cat,
 - **Restart Game**
   - Restart after winning or losing the game.
 
-## Additional Features
+## additional Features
 
-1. Characters can respawn randomly.
-2. Spike can avoid obstacles using single ray collision algorithm.
-3. Obstacles have been placed using Halton sequence.
-4. Ground tiles use perlin noise to add terrain and smooth texture.
-5. Tom, jerry, and Spike go through various state changes using state.js
-
+1. Jerry and Friends avoid collision through 4 ray collision detection.
+2. Spike uses A* algorithm to catch Tom and go to power up tile.
+3. Characters respawn randomly if it get stuck inside an obstacle.
+4. Tom, Jerry, and Spike have different speeds.
+5. PowerUP Ability:
+    - Tom: Speed increase (2x).
+    - Jerry and Friends: Invisibility for 10 second.
+    - Spike: Speed increase (2x) and A* algorithm to catch Tom.
+6. Game Over:
+    - Tom catches all Jerry and Friends.
+    - Spike catches Tom.
+7. Ground tiles use Perlin noise to add elevation.
 
 ## Technical Stack
 
 - **UI and Logic Development:** Three.js
 
-
 ## Project Structure
 
 ```plaintext
 code/
-  css/
-    main.css
   js/
     /Game
       /Behaviour
@@ -105,6 +107,23 @@ Documents
 .gitignore
 README.md
 ```
+
+## Getting Started
+
+1. Clone the repository.
+2. Open the terminal and navigate to the code directory.
+3. Run the following command to install the required dependencies:
+
+   ```bash
+   yarn install three
+   yarn install vite --dev
+   ```
+
+4. Run the following command to start the development server:
+
+   ```bash
+    yarn dev
+    ```
 
 ## Video Demo
 

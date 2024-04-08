@@ -294,7 +294,7 @@ export class MousePowerUp extends State {
 		character.gameMap.activatePowerUPTile();
 		setTimeout(() => {
 			character.switchState(new RemoveMousePowerUp());
-		}, 6000);
+		}, 10000);
 	}
 
 	/**

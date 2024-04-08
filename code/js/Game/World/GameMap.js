@@ -33,7 +33,12 @@ export class GameMap {
 		this.graph = new Graph(this.tileSize, this.cols, this.rows);
 
 		// Create a map renderer for visualizing the map
-		this.mapRenderer = new MapRenderer(this.start, this.tileSize, this.cols);
+		this.mapRenderer = new MapRenderer(
+			this.start,
+			this.tileSize,
+			this.cols,
+			this.rows
+		);
 
 		// Initialize a flow field map
 		this.flowfield = new Map();

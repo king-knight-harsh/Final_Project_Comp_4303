@@ -7,7 +7,7 @@ import { Controller } from "./Game/Behaviour/Controller.js"; // Ensure this is y
 import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
-import { Dog, GoToPowerUP } from "./Game/Behaviour/Dog.js";
+import { Dog } from "./Game/Behaviour/Dog.js";
 import { initializeCharacters } from "./Util/InitializeCharacter.js";
 import { CheckForCapture } from "./Game/Behaviour/State.js";
 
@@ -49,7 +49,8 @@ let dogArray = [];
 let tomArray = [];
 // Array to store all mice
 let jerryAndFriends = [];
-
+// Adding Directional Light
+let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
 // Resource Setup
 const resources = new Resources(resourceFiles);
 
@@ -57,11 +58,12 @@ const resources = new Resources(resourceFiles);
 async function setup() {
 	// Set background color
 	scene.background = new THREE.Color(0xffffff);
-
-	// Light setup
-	let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
 	// Set light position
-	directionalLight.position.set(50, 100, 50);
+	directionalLight.position.set(
+		mapCamera.position.x,
+		mapCamera.position.y,
+		mapCamera.position.z
+	);
 	// Add light to the scene
 	scene.add(directionalLight);
 
@@ -187,6 +189,14 @@ function animate() {
 	// Update Tom's direction
 	if (controller) controller.setWorldDirection();
 
+	directionalLight.position.set(
+		mapCamera.position.x + 50,
+		mapCamera.position.y + 100,
+		mapCamera.position.z + 50
+	);
+
+	scene.add(directionalLight);
+
 	if (jerryAndFriends.length > 0 && tomArray.length > 0) {
 		// Update all mice
 		jerryAndFriends.forEach((mouse) => {
@@ -211,6 +221,18 @@ function animate() {
 
 	renderer.render(scene, mapCamera);
 }
+function onWindowResize() {
+	mapCamera.aspect = window.innerWidth / window.innerHeight;
+	mapCamera.updateProjectionMatrix();
+
+	// Update the renderer size
+
+	renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Add a resize event listener
+
+window.addEventListener("resize", onWindowResize);
 
 // Start the game
 setup();
