@@ -24,14 +24,14 @@ export class State {
 export class CheckForCapture extends State {
 	/**
 	 * Method to enter the CheckForCapture state
-	 * @param {object} tom - The Tom character
+	 * @param {object} tomArray - The Tom character
 	 * @param {Array} jerryFriends - Array of Jerry's friends
-	 * @param {object} dog - The dog character
+	 * @param {object} dogArray - The dog character
 	 * @param {THREE.Scene} scene - The scene object
 	 */
-	enterState(tom, jerryFriends, dog, scene) {
+	enterState(tomArray, jerryFriends, dogArray, scene) {
 		jerryFriends.forEach((friend, index) => {
-			if (tom && tom.location.distanceTo(friend.location) < 1) {
+			if (tomArray[0] && tomArray[0].location.distanceTo(friend.location) < 1) {
 				if (index === 0) {
 					console.log("Tom has caught a Jerry!");
 				} else {
@@ -43,18 +43,18 @@ export class CheckForCapture extends State {
 		});
 
 		if (
-			tom &&
-			dog.location.distanceTo(tom.location) < 2.5 &&
-			!tom.isPowerActivated
+			tomArray[0] &&
+			dogArray[0].location.distanceTo(tomArray[0].location) < 2 &&
+			!tomArray[0].isPowerActivated
 		) {
 			console.log("Spike has captured Tom");
-			scene.remove(tom.gameObject);
-			tom = null;
+			scene.remove(tomArray[0].gameObject);
+			tomArray.splice(0, 1);
 		}
 
-		if (jerryFriends.length === 0 || tom === null) {
+		if (jerryFriends.length === 0 || tomArray.length === 0) {
 			let checkForResetState = new CheckForResetState();
-			checkForResetState.enterState(jerryFriends, tom);
+			checkForResetState.enterState(jerryFriends, tomArray);
 		}
 	}
 	/**
@@ -72,10 +72,10 @@ export class CheckForResetState extends State {
 	 * @param {Array} jerryFriends - Array of Jerry's friends
 	 * @param {object} tom - The Tom character
 	 */
-	enterState(jerryFriends, tom) {
-		if (jerryFriends.length === 0 || !tom) {
+	enterState(jerryFriends, tomArray) {
+		if (jerryFriends.length === 0 || tomArray.length === 0) {
 			let gameOverMsg;
-			if (!tom) {
+			if (tomArray[0]) {
 				gameOverMsg = "Jerry And Friends Won! Tom has been caught by Spike!";
 			} else {
 				gameOverMsg = "Tom Won! Tom caught Jerry and all his friends!";

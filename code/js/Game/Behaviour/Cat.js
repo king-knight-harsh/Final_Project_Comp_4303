@@ -38,7 +38,6 @@ export class Tom extends Character {
 	 * @param {Controller} controller - The controller object
 	 */
 	update(deltaTime, controller) {
-		super.update(deltaTime, this.gameMap);
 		// Check for landing on a PowerUp tile
 		const currentTile = this.getCurrentTile(this.gameMap);
 		const powerUpTileLocation = this.gameMap.quantize(
@@ -59,6 +58,7 @@ export class Tom extends Character {
 		}
 
 		this.state.updateState(this, controller);
+		super.update(deltaTime, this.gameMap);
 	}
 
 	/**
@@ -89,9 +89,9 @@ export class Tom extends Character {
 	 * Method to activate Tom's power up
 	 */
 	powerUP() {
+		this.isPowerActivated = true;
 		console.log("Cat PowerUp activated");
 		this.gameMap.activatePowerUPTile();
-		this.isPowerActivated = true;
 		this.setSpeed(10);
 	}
 

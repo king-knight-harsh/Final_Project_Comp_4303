@@ -7,7 +7,7 @@ import { Controller } from "./Game/Behaviour/Controller.js"; // Ensure this is y
 import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
-import { Dog } from "./Game/Behaviour/Dog.js";
+import { Dog, GoToPowerUP } from "./Game/Behaviour/Dog.js";
 import { initializeCharacters } from "./Util/InitializeCharacter.js";
 import { CheckForCapture } from "./Game/Behaviour/State.js";
 
@@ -43,8 +43,10 @@ const clock = new THREE.Clock();
 // Controller Variable
 let controller;
 
-// Game Characters
-let dog, tom;
+// Array to store all dogs
+let dogArray = [];
+// Array to store all cats
+let tomArray = [];
 // Array to store all mice
 let jerryAndFriends = [];
 
@@ -65,10 +67,6 @@ async function setup() {
 
 	// Initialize game map with 20 obstacles
 	gameMap.init(scene, 20);
-	// Create a new Tom instance
-	tom = new Tom(new THREE.Color(0xff0000), gameMap);
-	// Create a new Dog instance
-	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
 	// Camera setup
 	mapCamera.fov = 60;
@@ -81,7 +79,13 @@ async function setup() {
 	await setupModels();
 
 	// Initialize characters
-	initializeCharacters(gameMap, tom, dog, jerryAndFriends, scene);
+	initializeCharacters(
+		gameMap,
+		tomArray[0],
+		dogArray[0],
+		jerryAndFriends,
+		scene
+	);
 
 	// Controller setup
 	controller = new Controller(document, mapCamera);
@@ -95,10 +99,15 @@ async function setup() {
  */
 async function setupModels() {
 	await resources.loadAll().then(() => {
+		let tom = new Tom(new THREE.Color(0xff0023), gameMap);
+		tom.setModel(resources.get("tom"));
+		tomArray.push(tom);
+
+		let dog = new Dog(new THREE.Color(0xff0023), gameMap, tomArray[0]);
 		// Set models for dog and Tom
 		dog.setModel(resources.get("spike"));
 		dog.gameObject.scale.set(1, 1, 1);
-		tom.setModel(resources.get("tom"));
+		dogArray.push(dog);
 
 		gameMap.getObstacles().forEach((obstacle) => {
 			// Array of available building model names
@@ -151,7 +160,11 @@ async function setupModels() {
 		});
 		// Initialize additional mice
 		for (let i = 0; i <= 3; i++) {
-			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
+			let jerryFriend = new Mouse(
+				new THREE.Color(0x000000),
+				gameMap,
+				tomArray[0]
+			);
 			if (i === 0) {
 				jerryFriend.setModel(resources.get("jerry"));
 				jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
@@ -173,21 +186,25 @@ function animate() {
 	let deltaTime = clock.getDelta();
 	// Update Tom's direction
 	if (controller) controller.setWorldDirection();
-	// Update all characters
-	jerryAndFriends.forEach((mouse) => {
-		if (mouse) {
-			mouse.update(deltaTime);
-			// Each friend checks for Power-Up tile
-		}
-	});
 
-	tom.update(deltaTime, controller);
+	if (jerryAndFriends.length > 0 && tomArray.length > 0) {
+		// Update all mice
+		jerryAndFriends.forEach((mouse) => {
+			if (mouse) {
+				mouse.update(deltaTime);
+				// Each friend checks for Power-Up tile
+			}
+		});
+	}
+	if (tomArray.length > 0 && jerryAndFriends.length > 0)
+		tomArray[0].update(deltaTime, controller);
 
-	dog.update(deltaTime);
+	if (tomArray.length > 0 && jerryAndFriends.length > 0)
+		dogArray[0].update(deltaTime);
 
-	if (tom != null && jerryAndFriends.length > 0) {
+	if (tomArray.length > 0 && jerryAndFriends.length > 0) {
 		// Check for capture
-		checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
+		checkForCaptureState.enterState(tomArray, jerryAndFriends, dogArray, scene);
 	}
 
 	orbitControls.update();

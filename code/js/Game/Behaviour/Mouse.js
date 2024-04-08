@@ -16,7 +16,7 @@ export class Mouse extends Character {
 		this.pathFinding = new PathFinding(gameMap);
 		this.path = [];
 		this.currentTargetIndex = 0;
-		this.topSpeed = 10;
+		this.topSpeed = 0;
 		this.tom = tom;
 		this.isPowerActivated = false;
 		this.state = new AvoidTom();
@@ -295,10 +295,10 @@ export class MousePowerUp extends State {
 	 * @param {Mouse} character - The mouse character
 	 */
 	enterState(character) {
+		character.isPowerActivated = true;
 		console.log("Mouse has activated the power-up!");
 		character.disappear();
 		character.gameMap.activatePowerUPTile();
-		character.isPowerActivated = true;
 		setTimeout(() => {
 			character.switchState(new RemoveMousePowerUp());
 		}, 6000);
@@ -319,11 +319,11 @@ export class RemoveMousePowerUp extends State {
 	 * @param {Mouse} character - The mouse character
 	 */
 	enterState(character) {
+		character.isPowerActivated = false;
 		console.log("Mouse PowerUp Deactivated!");
 		character.respawnAtRandomLocation();
 		character.appear();
 		character.gameMap.resetPowerUPTile();
-		character.isPowerActivated = false;
 		character.switchState(new AvoidTom());
 	}
 
