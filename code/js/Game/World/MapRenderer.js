@@ -3,95 +3,122 @@ import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js"
 import { TileNode } from "./TileNode.js";
 
 export class MapRenderer {
-	constructor(start, tileSize, cols) {
-		this.start = start;
-		this.tileSize = tileSize;
-		this.cols = cols;
+  /**
+   * Constructor for the MapRenderer class
+   * @param {THREE.Vector3} start - The starting position of the map
+   * @param {number} tileSize - The size of each tile
+   * @param {number} cols - The number of columns in the map
+   */
+  constructor(start, tileSize, cols) {
+    this.start = start;
+    this.tileSize = tileSize;
+    this.cols = cols;
 
-		this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
-		// Use a map to manage non-terrain tiles
-		this.nonTerrainTiles = new Map();
+    // Geometry for ground tiles
+    this.groundGeometries = new THREE.BoxGeometry(0, 0, 0);
 
-		this.ObstacleList = [];
-		this.powerUpTile = null;
-	}
+    // Map to manage non-terrain tiles
+    this.nonTerrainTiles = new Map();
 
-	createRendering(graph, scene) {
-		for (let node of graph) {
-			this.createGround(node);
-			this.setTile(node, scene);
-		}
-		let groundMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+    // Array to store obstacle meshes
+    this.ObstacleList = [];
 
-		let ground = new THREE.Mesh(this.groundGeometries, groundMaterial);
-		scene.add(ground);
-	}
+    // Reference to the power-up tile mesh
+    this.powerUpTile = null;
+  }
 
-	createGround(node) {
-		let x = node.x * this.tileSize + this.start.x;
-		let y = 0;
-		let z = node.z * this.tileSize + this.start.z;
+  /**
+   * Method to create the rendering of the map
+   * @param {TileNode[]} graph - The graph representing the map
+   * @param {THREE.Scene} scene - The scene to render the map in
+   */
+  createRendering(graph, scene) {
+    for (let node of graph) {
+      this.createGround(node);
+      this.setTile(node, scene);
+    }
 
-		let geometry = new THREE.BoxGeometry(
-			this.tileSize,
-			this.tileSize,
-			this.tileSize
-		);
-		geometry.translate(
-			x + 0.5 * this.tileSize,
-			y + 0.5 * this.tileSize,
-			z + 0.5 * this.tileSize
-		);
+    // Create the ground mesh
+    let groundMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+    let ground = new THREE.Mesh(this.groundGeometries, groundMaterial);
+    scene.add(ground);
+  }
 
-		this.groundGeometries = BufferGeometryUtils.mergeGeometries([
-			this.groundGeometries,
-			geometry,
-		]);
-	}
+  /**
+   * Method to create a ground tile geometry
+   * @param {TileNode} node - The node representing the ground tile
+   */
+  createGround(node) {
+    let x = node.x * this.tileSize + this.start.x;
+    let y = 0;
+    let z = node.z * this.tileSize + this.start.z;
 
-	setTile(node, scene) {
-		if (this.nonTerrainTiles.has(node)) {
-			scene.remove(this.nonTerrainTiles.get(node));
-		}
-		// Only create non-ground tiles
-		if (node.type != TileNode.Type.Ground) {
-			let material;
-			switch (node.type) {
-				case TileNode.Type.PowerUp:
-					material = new THREE.MeshStandardMaterial({
-						color: 0xffff00,
-					});
-					break;
-				case TileNode.Type.Obstacle:
-					material = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-					break;
-				default:
-					return;
-			}
+    let geometry = new THREE.BoxGeometry(
+      this.tileSize,
+      this.tileSize,
+      this.tileSize
+    );
+    geometry.translate(
+      x + 0.5 * this.tileSize,
+      y + 0.5 * this.tileSize,
+      z + 0.5 * this.tileSize
+    );
 
-			let x = node.x * this.tileSize + this.start.x;
-			let y = this.tileSize / 2;
-			let z = node.z * this.tileSize + this.start.z;
+    // Merge geometries for efficiency
+    this.groundGeometries = BufferGeometryUtils.mergeGeometries([
+      this.groundGeometries,
+      geometry,
+    ]);
+  }
 
-			let geometry = new THREE.BoxGeometry(
-				this.tileSize,
-				this.tileSize,
-				this.tileSize
-			);
+  /**
+   * Method to set a tile in the scene
+   * @param {TileNode} node - The node representing the tile
+   * @param {THREE.Scene} scene - The scene to render the tile in
+   */
+  setTile(node, scene) {
+    if (this.nonTerrainTiles.has(node)) {
+      scene.remove(this.nonTerrainTiles.get(node));
+    }
+    // Create non-ground tiles only
+    if (node.type != TileNode.Type.Ground) {
+      let material;
+      switch (node.type) {
+        case TileNode.Type.PowerUp:
+          material = new THREE.MeshStandardMaterial({
+            color: 0xffff00,
+          });
+          break;
+        case TileNode.Type.Obstacle:
+          material = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+          break;
+        default:
+          return;
+      }
 
-			let mesh = new THREE.Mesh(geometry, material);
-			mesh.position.set(
-				x + this.tileSize / 2,
-				y + this.tileSize / 2,
-				z + this.tileSize / 2
-			);
+      let x = node.x * this.tileSize + this.start.x;
+      let y = this.tileSize / 2;
+      let z = node.z * this.tileSize + this.start.z;
 
-			if (node.type === TileNode.Type.PowerUp) {
-				this.powerUpTile = mesh;
-			}
-			this.nonTerrainTiles.set(node, mesh);
-			this.ObstacleList.push(mesh);
-			scene.add(mesh);
-		}
-	}
+      let geometry = new THREE.BoxGeometry(
+        this.tileSize,
+        this.tileSize,
+        this.tileSize
+      );
+
+      let mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(
+        x + this.tileSize / 2,
+        y + this.tileSize / 2,
+        z + this.tileSize / 2
+      );
+
+      if (node.type === TileNode.Type.PowerUp) {
+        this.powerUpTile = mesh;
+      }
+      this.nonTerrainTiles.set(node, mesh);
+      this.ObstacleList.push(mesh);
+      scene.add(mesh);
+    }
+  }
 }

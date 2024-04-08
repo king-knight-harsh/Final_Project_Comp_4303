@@ -21,10 +21,10 @@ let checkForCaptureState = new CheckForCapture();
 
 // Camera Setup
 const mapCamera = new THREE.PerspectiveCamera(
-	75,
-	window.innerWidth / window.innerHeight,
-	0.1,
-	1000
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
 );
 mapCamera.position.set(0, 100, 0); // Elevated position to view the whole map
 const orbitControls = new OrbitControls(mapCamera, renderer.domElement);
@@ -47,84 +47,87 @@ const resources = new Resources(resourceFiles);
 
 // Setup our scene
 async function setup() {
-	scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(0xffffff);
 
-	// Light setup
-	let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-	directionalLight.position.set(50, 100, 50);
-	scene.add(directionalLight);
+  // Light setup
+  let directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+  directionalLight.position.set(50, 100, 50);
+  scene.add(directionalLight);
 
-	gameMap.init(scene, 20);
+  gameMap.init(scene, 20);
 
-	tom = new Tom(new THREE.Color(0xff0000), gameMap);
+  tom = new Tom(new THREE.Color(0xff0000), gameMap);
 
-	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
+  dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
-	// Camera setup
-	setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
+  // Camera setup
+  setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
 
-	controller = new Controller(document, activeCamera);
+  controller = new Controller(document, activeCamera);
 
-	// Model setup
-	await setupModels();
+  // Model setup
+  await setupModels();
 
-	initializeCharacters(
-		gameMap,
-		tom,
-		dog,
-		jerryAndFriends,
-		scene,
-		mapCamera,
-		activeCamera
-	);
+  initializeCharacters(
+    gameMap,
+    tom,
+    dog,
+    jerryAndFriends,
+    scene,
+    mapCamera,
+    activeCamera
+  );
 
-	// Start animation loop
-	animate();
+  // Start animation loop
+  animate();
 }
 
+// Load models asynchronously
 async function setupModels() {
-	await resources.loadAll().then(() => {
-		dog.setModel(resources.get("spike"));
-		dog.gameObject.scale.set(1, 1, 1);
-		tom.setModel(resources.get("tom"));
+  await resources.loadAll().then(() => {
+    // Set models for dog and Tom
+    dog.setModel(resources.get("spike"));
+    dog.gameObject.scale.set(1, 1, 1);
+    tom.setModel(resources.get("tom"));
 
-		// Initialize additional mice
-		for (let i = 0; i <= 3; i++) {
-			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
-			if (i === 0) {
-				jerryFriend.setModel(resources.get("jerry"));
-				jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
-			} else {
-				jerryFriend.setModel(resources.get(`jerryFriend${i}`));
-				jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
-			}
-			jerryAndFriends.push(jerryFriend);
-		}
-	});
+    // Initialize additional mice
+    for (let i = 0; i <= 3; i++) {
+      let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);
+      if (i === 0) {
+        jerryFriend.setModel(resources.get("jerry"));
+        jerryFriend.gameObject.scale.set(0.5, 0.5, 0.5);
+      } else {
+        jerryFriend.setModel(resources.get(`jerryFriend${i}`));
+        jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
+      }
+      jerryAndFriends.push(jerryFriend);
+    }
+  });
 }
 
+// Animation loop
 function animate() {
-	requestAnimationFrame(animate);
-	let deltaTime = clock.getDelta();
+  requestAnimationFrame(animate);
+  let deltaTime = clock.getDelta();
 
-	jerryAndFriends.forEach((mouse) => {
-		if (mouse) {
-			mouse.update(deltaTime);
-			// Each friend checks for Power-Up tile
-		}
-	});
-	if (tom) {
-		tom.update(deltaTime, controller);
-	}
-	dog.update(deltaTime);
+  // Update all characters
+  jerryAndFriends.forEach((mouse) => {
+    if (mouse) {
+      mouse.update(deltaTime);
+      // Each friend checks for Power-Up tile
+    }
+  });
+  if (tom) {
+    tom.update(deltaTime, controller);
+  }
+  dog.update(deltaTime);
 
-	if (controller) controller.setWorldDirection();
+  // Check for capture
+  checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
 
-	checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
+  orbitControls.update();
 
-	orbitControls.update();
-
-	renderer.render(scene, activeCamera); // Use the active camera
+  renderer.render(scene, activeCamera); // Use the active camera
 }
 
 setup();
