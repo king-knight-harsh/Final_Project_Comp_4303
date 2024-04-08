@@ -87,7 +87,7 @@ export class IdleState extends State {
 }
 
 export class MovingState extends State {
-	enterState(player) {}
+	enterState() {}
 
 	updateState(player, controller) {
 		if (!controller.moving()) {

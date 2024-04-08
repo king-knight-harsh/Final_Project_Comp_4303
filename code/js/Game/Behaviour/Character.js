@@ -187,7 +187,7 @@ export class Character {
 	avoidCollision(obstacles) {
 		// Define the forward ray for collision detection
 		const forwardRayDirection = this.velocity.clone().normalize();
-		const forwardRayLength = 2; // Length of the ray
+		const forwardRayLength = 3; // Length of the ray
 
 		// Create a Raycaster for the forward ray
 		const forwardRay = new THREE.Raycaster(
@@ -200,18 +200,13 @@ export class Character {
 
 		let avoidanceForce = new THREE.Vector3();
 
-		// Check if there is an intersection with obstacles
 		if (intersects.length > 0) {
-			const closestObstacle = intersects[0];
+			const rightwardDirection = new THREE.Vector3(0, -1, 0)
+				.cross(forwardRayDirection)
+				.normalize();
 
-			// Determine the avoidance force direction (steer opposite the forward direction)
-			// You can adjust the force magnitude and direction as necessary
-			avoidanceForce
-				.subVectors(this.location, closestObstacle.point)
-				.normalize()
-				.multiplyScalar(this.topSpeed * 2);
-
-			// Optionally, you can fine-tune the avoidance force here, for example by considering the distance to the obstacle
+			// Apply the top speed to the rightward direction for the avoidance force
+			avoidanceForce.copy(rightwardDirection).multiplyScalar(this.topSpeed * 2);
 		}
 
 		return avoidanceForce;
@@ -223,7 +218,7 @@ export class Character {
 	}
 
 	physics() {
-		this.checkEdges(this.gameMap);
+		this.checkEdges();
 		// friction
 		let friction = this.velocity.clone();
 		friction.y = 0;

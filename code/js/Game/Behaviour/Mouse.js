@@ -17,10 +17,12 @@ export class Mouse extends Character {
 	}
 
 	update(deltaTime) {
-		// Call the base class update (Character's update logic)
 		super.update(deltaTime, this.gameMap);
 
-		// Existing state update logic...
+		let steer = this.avoidCollision(this.gameMap.getObstacles());
+		if (steer.length != 0) {
+			this.applyForce(steer);
+		}
 		this.state.updateState(this);
 	}
 
@@ -231,7 +233,7 @@ export class MousePowerUp extends State {
 		}, 6000);
 	}
 
-	updateState(character) {}
+	updateState() {}
 }
 
 export class RemoveMousePowerUp extends State {
@@ -244,5 +246,5 @@ export class RemoveMousePowerUp extends State {
 		character.switchState(new AvoidTom());
 	}
 
-	updateState(character) {}
+	updateState() {}
 }
