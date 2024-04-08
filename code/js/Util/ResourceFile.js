@@ -13,5 +13,9 @@ export let resourceFiles = [
 	{ name: "jerryFriend1", url: "/Models/mouse/jerryFriendOne.glb" }, // Friend 1 of Jerry
 	{ name: "jerryFriend2", url: "/Models/mouse/jerryFriendTwo.glb" }, // Friend 2 of Jerry
 	{ name: "jerryFriend3", url: "/Models/mouse/jerryFriendThree.glb" }, // Friend 3 of Jerry
-	{ name: "building", url: "/Models/building/large_building.glb" }, // Large building model
+	{ name: "building1", url: "/Models/building/large_building_0.glb" }, // Large building model
+	{ name: "building2", url: "/Models/building/large_building_1.glb" }, // Large building model
+	{ name: "building3", url: "/Models/building/large_building_2.glb" }, // Large building model
+	{ name: "building4", url: "/Models/building/large_building_3.glb" }, // Large building model
+	{ name: "building5", url: "/Models/building/large_building_4.glb" }, // Large building model
 ];

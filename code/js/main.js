@@ -108,6 +108,55 @@ async function setupModels() {
 		dog.gameObject.scale.set(1, 1, 1);
 		tom.setModel(resources.get("tom"));
 
+		gameMap.getObstacles().forEach((obstacle) => {
+			// Array of available building model names
+			const buildingNames = [
+				"building1",
+				"building2",
+				"building3",
+				"building4",
+				"building5",
+			];
+
+			// Randomly select a building model name
+			const selectedBuildingName =
+				buildingNames[Math.floor(Math.random() * buildingNames.length)];
+			const selectedBuilding = resources.get(selectedBuildingName).clone();
+
+			// Position the selected building model
+			selectedBuilding.position.copy(obstacle.position);
+
+			// Apply specific scales based on the selected building
+			switch (selectedBuildingName) {
+				case "building1":
+					selectedBuilding.scale.set(2.6, 4, 4);
+					break;
+				case "building2":
+					selectedBuilding.scale.set(6, 4, 6);
+					break;
+				case "building3":
+					selectedBuilding.scale.set(2.8, 4, 6);
+					break;
+				case "building4":
+					selectedBuilding.scale.set(4.2, 4, 4);
+					break;
+				case "building5":
+					selectedBuilding.scale.set(4, 4, 4);
+					break;
+				default:
+					// If for some reason the selected building is not found, log an error or set a default scale
+					console.error(
+						"Selected building not recognized:",
+						selectedBuildingName
+					);
+					selectedBuilding.scale.set(1, 1, 1); // Default scale, adjust as needed
+					break;
+			}
+
+			// Add the selected building model to the scene
+			scene.add(selectedBuilding);
+			// scene.remove(obstacle);
+		});
 		// Initialize additional mice
 		for (let i = 0; i <= 3; i++) {
 			let jerryFriend = new Mouse(new THREE.Color(0x000000), gameMap, tom);

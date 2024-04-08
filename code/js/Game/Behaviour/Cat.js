@@ -48,7 +48,8 @@ export class Tom extends Character {
 			powerUpTileLocation &&
 			currentTile.x === powerUpTileLocation.x &&
 			currentTile.z === powerUpTileLocation.z &&
-			!this.gameMap.isPowerUPTileActive()
+			!this.gameMap.isPowerUPTileActive() &&
+			!this.isPowerActivated
 		) {
 			this.powerUP();
 			setTimeout(() => {
@@ -87,11 +88,11 @@ export class Tom extends Character {
 	/**
 	 * Method to activate Tom's power up
 	 */
-	async powerUP() {
+	powerUP() {
 		console.log("Cat PowerUp activated");
-		await this.gameMap.activatePowerUPTile();
+		this.gameMap.activatePowerUPTile();
 		this.isPowerActivated = true;
-		await this.setSpeed(10);
+		this.setSpeed(10);
 	}
 
 	/**

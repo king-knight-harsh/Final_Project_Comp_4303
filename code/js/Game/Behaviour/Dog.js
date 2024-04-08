@@ -14,7 +14,7 @@ export class Dog extends Character {
 	 */
 	constructor(color, gameMap, tom) {
 		super(color, gameMap);
-		this.topSpeed = 3;
+		this.topSpeed = 4;
 		this.pathFinding = new PathFinding(gameMap);
 		this.state = new GoToPowerUP();
 		this.state.enterState(this);
@@ -49,6 +49,31 @@ export class Dog extends Character {
 	getTomLocation() {
 		return this.tom.location;
 	}
+
+	/**
+	 * Function to catch Tom using aStar pathfinding algorithm
+	 */
+	catchTom() {
+		let targetNode = this.gameMap.quantize(this.getTomLocation());
+		if (!targetNode) {
+			console.error("Target node for Tom's location is not valid.");
+			return;
+		}
+		let path = this.pathFinding.aStar(
+			this.gameMap.quantize(this.location),
+			targetNode
+		);
+		if (path && path.length > 1) {
+			// Ensure path[1] exists
+			let targetPosition = this.gameMap.localize(path[1]);
+			if (targetPosition) {
+				let steer = this.seek(targetPosition);
+				this.applyForce(steer);
+			} else {
+				console.error("Invalid target position derived from path.");
+			}
+		}
+	}
 }
 
 /**
@@ -60,35 +85,39 @@ export class GoToPowerUP extends State {
 	 * @param {Dog} character - The Dog character
 	 */
 	enterState(character) {
-		if (character.location !== undefined) {
-			const currentTile = character.getCurrentTile();
-			const powerUpTile = character.gameMap.quantize(
-				character.gameMap.getPowerUpTileLocation()
-			);
-			if (
-				currentTile !== undefined &&
-				powerUpTile !== undefined &&
-				powerUpTile &&
-				currentTile
-			) {
-				let path = character.pathFinding.aStar(
-					character.gameMap.quantize(character.location),
-					powerUpTile
+		if (character.gameMap.isPowerUPTileActive()) {
+			character.catchTom();
+		} else {
+			if (character.location !== undefined) {
+				const currentTile = character.getCurrentTile();
+				const powerUpTile = character.gameMap.quantize(
+					character.gameMap.getPowerUpTileLocation()
 				);
 				if (
-					currentTile.x === powerUpTile.x &&
-					currentTile.z === powerUpTile.z &&
-					!character.gameMap.isPowerUPTileActive()
+					currentTile !== undefined &&
+					powerUpTile !== undefined &&
+					powerUpTile &&
+					currentTile
 				) {
-					character.state = new DogPowerUp();
-				} else if (path && path.length > 1) {
-					// Ensure path[1] exists
-					let targetPosition = character.gameMap.localize(path[1]);
-					if (targetPosition) {
-						let steer = character.seek(targetPosition);
-						character.applyForce(steer);
-					} else {
-						console.error("Invalid target position derived from path.");
+					let path = character.pathFinding.aStar(
+						character.gameMap.quantize(character.location),
+						powerUpTile
+					);
+					if (
+						currentTile.x === powerUpTile.x &&
+						currentTile.z === powerUpTile.z &&
+						!character.gameMap.isPowerUPTileActive()
+					) {
+						character.state = new DogPowerUp();
+					} else if (path && path.length > 1) {
+						// Ensure path[1] exists
+						let targetPosition = character.gameMap.localize(path[1]);
+						if (targetPosition) {
+							let steer = character.seek(targetPosition);
+							character.applyForce(steer);
+						} else {
+							console.error("Invalid target position derived from path.");
+						}
 					}
 				}
 			}
@@ -116,25 +145,7 @@ export class DogPowerUp extends State {
 		character.isPowerActivated = true;
 		character.gameMap.activatePowerUPTile();
 		character.setSpeed(8);
-		let targetNode = character.gameMap.quantize(character.getTomLocation());
-		if (!targetNode) {
-			console.error("Target node for Tom's location is not valid.");
-			return;
-		}
-		let path = character.pathFinding.aStar(
-			character.gameMap.quantize(character.location),
-			targetNode
-		);
-		if (path && path.length > 1) {
-			// Ensure path[1] exists
-			let targetPosition = character.gameMap.localize(path[1]);
-			if (targetPosition) {
-				let steer = character.seek(targetPosition);
-				character.applyForce(steer);
-			} else {
-				console.error("Invalid target position derived from path.");
-			}
-		}
+		character.catchTom();
 
 		setTimeout(() => {
 			character.state = new RemoveDogPowerUp();

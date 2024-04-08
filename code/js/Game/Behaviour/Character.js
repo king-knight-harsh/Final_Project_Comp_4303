@@ -219,7 +219,7 @@ export class Character {
 	 */
 	avoidCollision(obstacles) {
 		const forwardRayDirection = this.velocity.clone().normalize();
-		const forwardRayLength = 3;
+		const forwardRayLength = 4;
 		const forwardRay = new THREE.Raycaster(
 			this.location,
 			forwardRayDirection,
@@ -234,9 +234,8 @@ export class Character {
 			const rightwardDirection = new THREE.Vector3(0, -1, 0)
 				.cross(forwardRayDirection)
 				.normalize();
-			avoidanceForce.copy(rightwardDirection).multiplyScalar(this.topSpeed * 2);
+			avoidanceForce.copy(rightwardDirection).multiplyScalar(this.topSpeed * 5);
 		}
-
 		return avoidanceForce;
 	}
 

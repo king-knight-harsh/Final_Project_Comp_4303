@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Class representing a node in the tile grid
  */
@@ -120,5 +121,22 @@ export class TileNode {
 				", ";
 		}
 		s = s.slice(0, -2);
+	}
+
+	/**
+	 * Method to set the model for the character
+	 * @param {THREE.Object3D} model - The model object
+	 */
+	setModel(model) {
+		// Increment y position
+		model.position.y += 1;
+		// Rotate model to face +z axis
+		let bbox = new THREE.Box3().setFromObject(model);
+		let dz = bbox.max.z - bbox.min.z;
+		let scale = this.size / dz;
+		model.scale.set(scale, scale, scale);
+
+		this.gameObject = new THREE.Group();
+		this.gameObject.add(model);
 	}
 }

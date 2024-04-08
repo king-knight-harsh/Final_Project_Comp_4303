@@ -93,14 +93,17 @@ export class MapRenderer {
 					});
 					break;
 				case TileNode.Type.Obstacle:
-					material = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+					material = new THREE.MeshStandardMaterial({
+						color: 0x8b4513,
+						visible: false,
+					});
 					break;
 				default:
 					return;
 			}
 
 			let x = node.x * this.tileSize + this.start.x;
-			let y = this.tileSize / 2;
+			let y = node.type == TileNode.Type.PowerUp ? 1 : this.tileSize / 2;
 			let z = node.z * this.tileSize + this.start.z;
 
 			let geometry = new THREE.BoxGeometry(
@@ -120,7 +123,10 @@ export class MapRenderer {
 				this.powerUpTile = mesh;
 			}
 			this.nonTerrainTiles.set(node, mesh);
-			this.ObstacleList.push(mesh);
+
+			if (node.type === TileNode.Type.Obstacle) {
+				this.ObstacleList.push(mesh);
+			}
 			scene.add(mesh);
 		}
 	}
