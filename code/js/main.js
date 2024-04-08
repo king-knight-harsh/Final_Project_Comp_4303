@@ -8,7 +8,6 @@ import { Resources } from "./Util/Resources.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resourceFiles } from "./Util/ResourceFile.js";
 import { Dog } from "./Game/Behaviour/Dog.js";
-import { setupCameras } from "./Util/CameraSetup.js";
 import { initializeCharacters } from "./Util/InitializeCharacter.js";
 import { CheckForCapture } from "./Game/Behaviour/State.js";
 
@@ -41,9 +40,6 @@ orbitControls.update();
 const gameMap = new GameMap();
 const clock = new THREE.Clock();
 
-// Camera Variables
-let tomCamera;
-let activeCamera = mapCamera;
 // Controller Variable
 let controller;
 
@@ -75,24 +71,20 @@ async function setup() {
 	dog = new Dog(new THREE.Color(0xff0023), gameMap, tom);
 
 	// Camera setup
-	setupCameras(mapCamera, tomCamera, activeCamera, tom, scene);
-
-	// Controller setup
-	controller = new Controller(document, activeCamera);
+	mapCamera.fov = 60;
+	mapCamera.position.set(0, 40, 40);
+	mapCamera.lookAt(0, 0, 0);
+	mapCamera.updateProjectionMatrix();
+	scene.add(mapCamera);
 
 	// Model setup
 	await setupModels();
 
 	// Initialize characters
-	initializeCharacters(
-		gameMap,
-		tom,
-		dog,
-		jerryAndFriends,
-		scene,
-		mapCamera,
-		activeCamera
-	);
+	initializeCharacters(gameMap, tom, dog, jerryAndFriends, scene);
+
+	// Controller setup
+	controller = new Controller(document, mapCamera);
 
 	// Start animation loop
 	animate();
@@ -177,8 +169,10 @@ async function setupModels() {
  */
 function animate() {
 	requestAnimationFrame(animate);
+	// Calculate delta time
 	let deltaTime = clock.getDelta();
-
+	// Update Tom's direction
+	if (controller) controller.setWorldDirection();
 	// Update all characters
 	jerryAndFriends.forEach((mouse) => {
 		if (mouse) {
@@ -186,9 +180,9 @@ function animate() {
 			// Each friend checks for Power-Up tile
 		}
 	});
-	if (tom) {
-		tom.update(deltaTime, controller);
-	}
+
+	tom.update(deltaTime, controller);
+
 	dog.update(deltaTime);
 
 	if (tom != null && jerryAndFriends.length > 0) {
@@ -198,7 +192,7 @@ function animate() {
 
 	orbitControls.update();
 
-	renderer.render(scene, activeCamera); // Use the active camera
+	renderer.render(scene, mapCamera);
 }
 
 // Start the game

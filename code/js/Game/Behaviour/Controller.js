@@ -1,14 +1,7 @@
 import * as THREE from "three";
 
-/**
- * Class sets the controller for the game
- */
 export class Controller {
-	/**
-	 * Constructor for the Controller class
-	 * @param {Document} doc - The document object
-	 * @param {THREE.Camera} camera - The camera object
-	 */
+	// Controller Constructor
 	constructor(doc, camera) {
 		this.doc = doc;
 		this.left = false;
@@ -24,10 +17,6 @@ export class Controller {
 		this.setWorldDirection();
 	}
 
-	/**
-	 * Event handler for keydown and keyup events
-	 * @param {Event} event - The event object
-	 */
 	handleEvent(event) {
 		if (event.type == "keydown") {
 			switch (event.code) {
@@ -62,36 +51,22 @@ export class Controller {
 		}
 	}
 
-	/**
-	 * Method to remove event listeners
-	 */
 	destroy() {
 		this.doc.removeEventListener("keydown", this);
 		this.doc.removeEventListener("keyup", this);
 	}
 
-	/**
-	 * Method to check if the controller is in a moving state
-	 * @returns {boolean} - True if the controller is moving, false otherwise
-	 */
 	moving() {
 		if (this.left || this.right || this.forward || this.backward) return true;
 		return false;
 	}
 
-	/**
-	 * Method to set the world direction based on the camera
-	 */
 	setWorldDirection() {
 		this.worldDirection = new THREE.Vector3();
 		this.camera.getWorldDirection(this.worldDirection);
 		this.worldDirection.y = 0;
 	}
 
-	/**
-	 * Method to get the direction of movement based on controller input
-	 * @returns {THREE.Vector3} - The direction vector
-	 */
 	direction() {
 		let angleOffset = this.angleOffset();
 		let direction = this.worldDirection.clone();
@@ -102,19 +77,11 @@ export class Controller {
 		return direction;
 	}
 
-	/**
-	 * Method to set a new camera for the controller
-	 * @param {THREE.Camera} newCamera - The new camera object
-	 */
 	setCamera(newCamera) {
 		this.camera = newCamera;
 		this.setWorldDirection();
 	}
 
-	/**
-	 * Method to calculate the angle offset based on controller input
-	 * @returns {number} - The angle offset in radians
-	 */
 	angleOffset() {
 		let angleOffset = 0; // forward
 

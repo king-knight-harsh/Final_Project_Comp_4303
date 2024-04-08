@@ -38,6 +38,7 @@ export class Tom extends Character {
 	 * @param {Controller} controller - The controller object
 	 */
 	update(deltaTime, controller) {
+		super.update(deltaTime, this.gameMap);
 		// Check for landing on a PowerUp tile
 		const currentTile = this.getCurrentTile(this.gameMap);
 		const powerUpTileLocation = this.gameMap.quantize(
@@ -57,7 +58,6 @@ export class Tom extends Character {
 			}, 6000);
 		}
 
-		super.update(deltaTime, this.gameMap);
 		this.state.updateState(this, controller);
 	}
 

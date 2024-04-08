@@ -19,15 +19,7 @@
  * @param {THREE.Camera} activeCamera - A reference to the currently active camera. This function sets it to `mapCamera`.
  *
  */
-export function initializeCharacters(
-	gameMap,
-	tom,
-	dog,
-	jerryFriends,
-	scene,
-	mapCamera,
-	activeCamera
-) {
+export function initializeCharacters(gameMap, tom, dog, jerryFriends, scene) {
 	// Get a random starting place for Jerry and Tom
 	let catPlayer = gameMap.graph.getRandomEmptyTile();
 	let dogPlayer = gameMap.graph.getRandomEmptyTile();
@@ -43,7 +35,4 @@ export function initializeCharacters(
 		mouse.location = gameMap.localize(startMouse);
 		scene.add(mouse.gameObject);
 	});
-
-	// Active camera starts with the map view
-	activeCamera = mapCamera;
 }
