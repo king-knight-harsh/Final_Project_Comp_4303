@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Character } from "./Character.js";
 import { State } from "./State.js";
 import { PathFinding } from "../../Util/PathFinding.js";
+import { VectorUtil } from "../../Util/VectorUtil.js";
 export class Mouse extends Character {
 	constructor(mColor, gameMap, tom) {
 		super(mColor, gameMap);
@@ -29,26 +30,26 @@ export class Mouse extends Character {
 	}
 
 	isMovingTowards(player) {
-		let tomMovementDirection = new THREE.Vector3()
-			.subVectors(player.location, player.previousPosition)
-			.normalize();
-		let jerryToTomDirection = new THREE.Vector3()
-			.subVectors(player.location, this.location)
-			.normalize();
-		return tomMovementDirection.dot(jerryToTomDirection) > 0.5;
+		let tomMovementDirection = VectorUtil.sub(
+			player.location,
+			player.previousPosition
+		).normalize();
+		let jerryToTomDirection = VectorUtil.sub(
+			player.location,
+			this.location
+		).normalize();
+		return VectorUtil.dot(tomMovementDirection, jerryToTomDirection) > 0.5;
 	}
 
 	calculateEscapeDirection(player) {
-		return new THREE.Vector3()
-			.subVectors(this.location, player.location)
-			.normalize();
+		return VectorUtil.sub(this.location, player.location).normalize();
 	}
 
 	attemptEscape(direction, player) {
 		let safeRadius = 6;
-		let escapeTargetPosition = new THREE.Vector3().addVectors(
+		let escapeTargetPosition = VectorUtil.add(
 			this.location,
-			direction.multiplyScalar(safeRadius)
+			VectorUtil.multiplyScalar(direction, safeRadius)
 		);
 		let escapeTargetTile = this.gameMap.quantize(escapeTargetPosition);
 
@@ -146,11 +147,11 @@ export class Mouse extends Character {
 			let currentTarget = this.gameMap.localize(
 				this.path[this.currentTargetIndex]
 			);
-			let direction = currentTarget.clone().sub(this.location).normalize();
-			this.applyForce(direction.multiplyScalar(this.topSpeed));
+			let direction = VectorUtil.sub(currentTarget, this.location).normalize();
+			this.applyForce(VectorUtil.multiplyScalar(direction, this.topSpeed));
 
 			if (
-				this.location.distanceTo(currentTarget) <
+				VectorUtil.distance(this.location, currentTarget) <
 				this.gameMap.tileSize * 0.5
 			) {
 				this.currentTargetIndex++;

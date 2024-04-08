@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { VectorUtil } from "../../Util/VectorUtil.js";
 import { TileNode } from "../World/TileNode.js";
-import { CollisionDetector } from "../../Util/CollisionDetector.js";
 export class Character {
 	// Character Constructor
 	constructor(mColor, gameMap) {
@@ -61,27 +60,27 @@ export class Character {
 	}
 
 	pursue(character, time) {
-		let prediction = new THREE.Vector3(0, 0, 0);
-		prediction.addScaledVector(character.velocity, time);
-		prediction.add(character.location);
-
+		let prediction = VectorUtil.multiplyScalar(
+			character.velocity.clone(),
+			time
+		);
+		prediction = VectorUtil.add(prediction, character.location);
 		return this.seek(prediction);
 	}
 
 	wander() {
-		let d = 20;
-		let r = 5;
-		let a = 0.3;
+		let d = 20; // Distance ahead of the current location
+		let r = 5; // Radius of the circle for the wander target
+		let a = 0.3; // Angle change
 
-		let futureLocation = this.velocity.clone();
-		futureLocation.setLength(d);
-		futureLocation.add(this.location);
+		let futureLocation = VectorUtil.multiplyScalar(this.velocity.clone(), d);
+		futureLocation = VectorUtil.add(futureLocation, this.location);
 
 		if (this.wanderAngle == null) {
-			this.wanderAngle = Math.random() * (Math.PI * 2);
+			this.wanderAngle = Math.random() * (Math.PI * 2); // Initial random angle
 		} else {
-			let change = Math.random() * (a * 2) - a;
-			this.wanderAngle = this.wanderAngle + change;
+			let change = Math.random() * (a * 2) - a; // Random change in angle
+			this.wanderAngle += change;
 		}
 
 		let target = new THREE.Vector3(
@@ -89,7 +88,8 @@ export class Character {
 			0,
 			r * Math.cos(this.wanderAngle)
 		);
-		target.add(futureLocation);
+		target = VectorUtil.add(target, futureLocation);
+
 		return this.seek(target);
 	}
 
@@ -101,8 +101,12 @@ export class Character {
 			console.log("Character is on an obstacle, respawning...");
 			this.respawnAtRandomLocation();
 		}
-		this.velocity.addScaledVector(this.acceleration, deltaTime);
 
+		this.velocity = VectorUtil.addScaledVector(
+			this.velocity,
+			this.acceleration,
+			deltaTime
+		);
 		if (this.velocity.length() > 0) {
 			if (this.velocity.x != 0 || this.velocity.z != 0) {
 				let angle = Math.atan2(this.velocity.x, this.velocity.z);
@@ -110,17 +114,17 @@ export class Character {
 			}
 
 			if (this.velocity.length() > this.topSpeed) {
-				this.velocity.setLength(this.topSpeed);
+				this.velocity = VectorUtil.setLength(this.velocity, this.topSpeed);
 			}
 
-			this.location.addScaledVector(this.velocity, deltaTime);
+			this.location = VectorUtil.addScaledVector(
+				this.location,
+				this.velocity,
+				deltaTime
+			);
 		}
 
-		this.gameObject.position.set(
-			this.location.x,
-			this.location.y,
-			this.location.z
-		);
+		this.gameObject.position.copy(this.location);
 		this.acceleration.multiplyScalar(0);
 	}
 
@@ -214,10 +218,8 @@ export class Character {
 	}
 
 	applyForce(force) {
-		// here, we are saying force = force/mass
-		force.divideScalar(this.mass);
-		// this is acceleration + force/mass
-		this.acceleration.add(force);
+		let adjustedForce = VectorUtil.divideScalar(force, this.mass);
+		this.acceleration = VectorUtil.add(this.acceleration, adjustedForce);
 	}
 
 	physics() {
@@ -232,15 +234,12 @@ export class Character {
 	}
 
 	seek(target) {
-		let desired = new THREE.Vector3();
-		desired.subVectors(target, this.location);
-		desired.setLength(this.topSpeed);
+		let desired = VectorUtil.sub(target, this.location);
+		desired = VectorUtil.setLength(desired, this.topSpeed);
 
-		let steer = new THREE.Vector3();
-		steer.subVectors(desired, this.velocity);
-
+		let steer = VectorUtil.sub(desired, this.velocity);
 		if (steer.length() > this.maxForce) {
-			steer.setLength(this.maxForce);
+			steer = VectorUtil.setLength(steer, this.maxForce);
 		}
 
 		return steer;

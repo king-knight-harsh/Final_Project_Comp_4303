@@ -1,7 +1,4 @@
-import * as THREE from 'three';
-
 export class VectorUtil {
-
 	// Add two vectors
 	// Returns a new vector = a + b
 	static add(a, b) {
@@ -10,7 +7,7 @@ export class VectorUtil {
 		return v;
 	}
 
-	// Subtracts vector a from b 
+	// Subtracts vector a from b
 	// Returns a new vector = a - b
 	static sub(a, b) {
 		let v = a.clone();
@@ -33,7 +30,6 @@ export class VectorUtil {
 		v.divideScalar(s);
 		return v;
 	}
-
 
 	// Sets length of clone of vector a to s
 	// Returns a new vector = a * s
@@ -59,7 +55,16 @@ export class VectorUtil {
 		return v;
 	}
 
+	// Calculates the dot product of vectors a and b
+	// Returns a scalar = a . b
+	static dot(a, b) {
+		return a.dot(b);
+	}
 
-
-
+	// Calculates the Euclidean distance between vectors a and b
+	// Returns the distance as a scalar
+	static distance(a, b) {
+		let diff = a.clone().sub(b);
+		return diff.length();
+	}
 }

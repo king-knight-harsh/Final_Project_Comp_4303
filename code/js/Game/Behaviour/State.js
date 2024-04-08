@@ -54,7 +54,15 @@ export class CheckForResetState extends State {
 	enterState(jerryFriends, tom) {
 		// The logic previously in checkForReset
 		if (jerryFriends.length === 0 || !tom) {
+			let gameOverMsg;
+			if (!tom) {
+				gameOverMsg =
+					"Jerry And Friends Won !!!! Tom has been caught by Spike!";
+			} else {
+				gameOverMsg = "Tom Won !!!!! Tom caught Jerry and all his friends!";
+			}
 			const modalHTML = `
+			
             <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
@@ -63,7 +71,7 @@ export class CheckForResetState extends State {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            All characters have been caught!
+                            ${gameOverMsg}
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary" id="restartBtn">Restart</button>

@@ -1,6 +1,5 @@
 import { Character } from "./Character.js";
 import { State } from "./State.js";
-import * as THREE from "three";
 import { PathFinding } from "../../Util/PathFinding.js";
 
 export class Dog extends Character {
