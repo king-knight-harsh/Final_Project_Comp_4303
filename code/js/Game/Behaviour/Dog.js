@@ -16,12 +16,10 @@ export class Dog extends Character {
 		super(color, gameMap);
 
 		this.pathFinding = new PathFinding(gameMap);
-		this.state = new GoToPowerUP();
-		this.state.enterState(this);
-
 		this.topSpeed = 4;
 		this.tom = tom;
 		this.isPowerActivated = false;
+		this.switchState(new GoToPowerUP());
 	}
 
 	/**
@@ -31,22 +29,11 @@ export class Dog extends Character {
 	update(deltaTime) {
 		// Call the base class update (Character's update logic)
 		super.update(deltaTime, this.gameMap);
-
+		if (this.state) {
+			this.state.updateState(this);
+		}
 		// Update the Dog's state
 		this.state.updateState(this);
-	}
-
-	switchState(newState) {
-		// Check if the current state is different from the new state
-		if (this.state.name !== newState.name) {
-			this.state = newState;
-			this.state.enterState(this);
-			console.log(`Transitioning to state: ${this.state.name}`);
-		} else {
-			console.log(
-				`Already in state: ${this.state.name}, no transition performed.`
-			);
-		}
 	}
 
 	/**
@@ -65,6 +52,10 @@ export class Dog extends Character {
 		return this.tom.location;
 	}
 
+	/**
+	 * Method to switch the state of the mouse character
+	 * @param {State} state - The new state to switch to
+	 */
 	switchState(state) {
 		this.state = state;
 		this.state.enterState(this);
@@ -74,7 +65,6 @@ export class Dog extends Character {
 	 * Function to catch Tom using aStar pathfinding algorithm
 	 */
 	catchTom() {
-		console.log("Dog is catching Tom!");
 		let targetNode = this.gameMap.quantize(this.getTomLocation());
 		if (!targetNode) {
 			console.error("Target node for Tom's location is not valid.");
@@ -84,8 +74,6 @@ export class Dog extends Character {
 			this.gameMap.quantize(this.location),
 			targetNode
 		);
-
-		console.log("Path to Tom:", path);
 		if (path && path.length > 1) {
 			// Ensure path[1] exists
 			let targetPosition = this.gameMap.localize(path[1]);
@@ -98,7 +86,37 @@ export class Dog extends Character {
 		}
 	}
 
-	findPowerUp() {}
+	findPowerUp() {
+		if (this.location !== undefined) {
+			const currentTile = this.getCurrentTile();
+			const powerUpTile = this.gameMap.quantize(
+				this.gameMap.getPowerUpTileLocation()
+			);
+			let path = this.pathFinding.aStar(
+				this.gameMap.quantize(this.location),
+				powerUpTile
+			);
+			if (powerUpTile && currentTile) {
+				if (
+					currentTile.x === powerUpTile.x &&
+					currentTile.z === powerUpTile.z &&
+					!this.gameMap.isPowerUPTileActive() &&
+					!this.isPowerActivated
+				) {
+					this.switchState(new DogPowerUp());
+				} else if (path && path.length > 1) {
+					// Ensure path[1] exists
+					let targetPosition = this.gameMap.localize(path[1]);
+					if (targetPosition) {
+						let steer = this.seek(targetPosition);
+						this.applyForce(steer);
+					} else {
+						console.error("Invalid target position derived from path.");
+					}
+				}
+			}
+		}
+	}
 }
 
 /**
@@ -116,36 +134,7 @@ export class GoToPowerUP extends State {
 			!character.gameMap.isPowerUPTileActive() &&
 			!character.isPowerActivated
 		) {
-			console.log("Dog is going to the PowerUP!");
-			if (character.location !== undefined) {
-				const currentTile = character.getCurrentTile();
-				const powerUpTile = character.gameMap.quantize(
-					character.gameMap.getPowerUpTileLocation()
-				);
-				let path = character.pathFinding.aStar(
-					character.gameMap.quantize(character.location),
-					powerUpTile
-				);
-				if (powerUpTile && currentTile) {
-					if (
-						currentTile.x === powerUpTile.x &&
-						currentTile.z === powerUpTile.z &&
-						!character.gameMap.isPowerUPTileActive() &&
-						!character.isPowerActivated
-					) {
-						character.switchState(new DogPowerUp());
-					} else if (path && path.length > 1) {
-						// Ensure path[1] exists
-						let targetPosition = character.gameMap.localize(path[1]);
-						if (targetPosition) {
-							let steer = character.seek(targetPosition);
-							character.applyForce(steer);
-						} else {
-							console.error("Invalid target position derived from path.");
-						}
-					}
-				}
-			}
+			character.findPowerUp();
 		}
 	}
 
@@ -171,7 +160,6 @@ export class DogPowerUp extends State {
 		console.log("Dog PowerUp Activated!");
 		character.gameMap.activatePowerUPTile();
 		character.setSpeed(8);
-		character.catchTom();
 
 		setTimeout(() => {
 			character.switchState(new RemoveDogPowerUp());
@@ -183,7 +171,7 @@ export class DogPowerUp extends State {
 	 * @param {Dog} character - The Dog character
 	 */
 	updateState(character) {
-		this.enterState(character);
+		character.catchTom();
 	}
 }
 

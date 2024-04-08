@@ -16,11 +16,10 @@ export class Mouse extends Character {
 		this.pathFinding = new PathFinding(gameMap);
 		this.path = [];
 		this.currentTargetIndex = 0;
-		this.topSpeed = 0;
+		this.topSpeed = 10;
 		this.tom = tom;
 		this.isPowerActivated = false;
-		this.state = new AvoidTom();
-		this.state.enterState(this);
+		this.switchState(new AvoidTom());
 	}
 
 	/**
@@ -236,11 +235,13 @@ export class Mouse extends Character {
  * Class representing the AvoidTom state
  */
 export class AvoidTom extends State {
+	enterState() {}
+
 	/**
-	 * Method to enter the AvoidTom state
+	 * Method to update the AvoidTom state
 	 * @param {Mouse} character - The mouse character
 	 */
-	enterState(character) {
+	updateState(character) {
 		// First, check if the character is on a power-up tile
 		const currentTile = character.getCurrentTile(character.location);
 		const powerUpTile = character.gameMap.quantize(
@@ -275,14 +276,6 @@ export class AvoidTom extends State {
 			// If there's no path, try moving in any direction
 			character.moveAny(character.tom);
 		}
-	}
-
-	/**
-	 * Method to update the AvoidTom state
-	 * @param {Mouse} character - The mouse character
-	 */
-	updateState(character) {
-		this.enterState(character);
 	}
 }
 
