@@ -41,7 +41,7 @@ let controller;
 // Characters
 
 let dog, tom;
-let jerryFriends = []; // Assuming initialization of Jerry's friends happens later
+let jerryAndFriends = [];
 
 const resources = new Resources(resourceFiles);
 
@@ -72,7 +72,7 @@ async function setup() {
 		gameMap,
 		tom,
 		dog,
-		jerryFriends,
+		jerryAndFriends,
 		scene,
 		mapCamera,
 		activeCamera
@@ -98,7 +98,7 @@ async function setupModels() {
 				jerryFriend.setModel(resources.get(`jerryFriend${i}`));
 				jerryFriend.gameObject.scale.set(1.5, 1.5, 1.5);
 			}
-			jerryFriends.push(jerryFriend);
+			jerryAndFriends.push(jerryFriend);
 		}
 	});
 }
@@ -107,7 +107,7 @@ function animate() {
 	requestAnimationFrame(animate);
 	let deltaTime = clock.getDelta();
 
-	jerryFriends.forEach((mouse) => {
+	jerryAndFriends.forEach((mouse) => {
 		if (mouse) {
 			mouse.update(deltaTime);
 			// Each friend checks for Power-Up tile
@@ -120,7 +120,7 @@ function animate() {
 
 	if (controller) controller.setWorldDirection();
 
-	checkForCaptureState.enterState(tom, jerryFriends, dog, scene);
+	checkForCaptureState.enterState(tom, jerryAndFriends, dog, scene);
 
 	orbitControls.update();
 

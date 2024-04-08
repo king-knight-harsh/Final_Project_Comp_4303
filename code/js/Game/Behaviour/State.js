@@ -48,9 +48,7 @@ export class CheckForCapture extends State {
 		}
 	}
 
-	updateState(tom, jerryFriends, dog, scene) {
-		this.enterState(tom, jerryFriends, dog, scene);
-	}
+	updateState() {}
 }
 export class CheckForResetState extends State {
 	enterState(jerryFriends, tom) {
@@ -93,7 +91,5 @@ export class CheckForResetState extends State {
 		}
 	}
 
-	updateState(tom, jerryFriends) {
-		this.enterState(tom, jerryFriends);
-	}
+	updateState() {}
 }
