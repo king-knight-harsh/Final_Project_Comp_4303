@@ -44,8 +44,7 @@ export class CheckForCapture extends State {
 
 		if (
 			tomArray[0] &&
-			dogArray[0].location.distanceTo(tomArray[0].location) < 2 &&
-			!tomArray[0].isPowerActivated
+			dogArray[0].location.distanceTo(tomArray[0].location) < 2
 		) {
 			console.log("Spike has captured Tom");
 			scene.remove(tomArray[0].gameObject);
@@ -75,7 +74,7 @@ export class CheckForResetState extends State {
 	enterState(jerryFriends, tomArray) {
 		if (jerryFriends.length === 0 || tomArray.length === 0) {
 			let gameOverMsg;
-			if (tomArray[0]) {
+			if (tomArray.length === 0) {
 				gameOverMsg = "Jerry And Friends Won! Tom has been caught by Spike!";
 			} else {
 				gameOverMsg = "Tom Won! Tom caught Jerry and all his friends!";
