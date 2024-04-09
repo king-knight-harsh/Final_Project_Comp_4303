@@ -54,11 +54,11 @@ Tom's Maze Chase is an exciting game where players take control of Tom, the cat,
 
 ## Concept Covered
 
-1. Complex Movement Algorithms - Using Wander and Collision Avoidance for Jerry and Friends to avoid collision and tom to effectively move around the maze.
-2. Path Finding - Using A* algorithm for Spike to catch Tom and go to power up tile.
-3. Decision Making - Using state machine for Tom, Jerry, and Spike to change their state based on the game. Using State machine to checking for capture and game reset state.
-4. Procedural Generation - Using Perlin noise to generate to add elevation to the ground tiles.
-5. Other topic used - Using Halton sequence to place the Obstacles randomly on the table.
+1. **Complex Movement Algorithms** - Using Wander and Collision Avoidance for Jerry and Friends to avoid collision and tom to effectively move around the maze.
+2. **Path Finding** - Using A* algorithm for Spike to catch Tom and go to power up tile.
+3. **Decision Making** - Using state machine for Tom, Jerry, and Spike to change their state based on the game. Using State machine to checking for capture and game reset state.
+4. **Procedural Generation** - Using Perlin noise to generate to add elevation to the ground tiles.
+5. **Other topic used** - Using Halton sequence to place the Obstacles randomly on the table.
 
 ## Description Behaviour Folder
 
